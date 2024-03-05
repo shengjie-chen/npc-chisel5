@@ -13,7 +13,7 @@
 /// @param raddr
 /// @param rdata
 extern "C" void pmem_read_dpi(long long raddr, long long *rdata, long long pc) {
-    if (raddr == RTC_ADDR) {
+	    if (raddr == RTC_ADDR) {
         struct timeval now;
         gettimeofday(&now, NULL);
         *rdata = now.tv_sec * 1000000 + now.tv_usec;
@@ -64,11 +64,11 @@ extern "C" void pmem_read_dpi(long long raddr, long long *rdata, long long pc) {
     // 总是读取地址为`raddr & ~0x7ull`的8字节返回给`rdata`
     if (likely(in_pmem(raddr))) {
         *rdata = pmem_read(raddr & ~0x7ull, 8);
-#ifdef CONFIG_MTRACE
+		#ifdef CONFIG_MTRACE
         fprintf(mtrace_fp, "T:%ld\tread  pmem ## addr: %llx", main_time, raddr & ~0x7ull);
-        fprintf(mtrace_fp, " -> 0x%016llx \n", *rdata);
+		        fprintf(mtrace_fp, " -> 0x%016llx \n", *rdata);
 #endif
-    }
+		    }
 }
 
 /// @brief dpi函数用于写任意有效地址
@@ -215,7 +215,7 @@ uint64_t typeb_br = 0;
 uint64_t ret_inst = 0;
 uint64_t ret_error_inst = 0;
 #ifdef RAS_SPMU
-#define RAS_PATH NPC_HOME "/build/RVnpc/RVNoob/npc-ras-log.txt"
+#define RAS_PATH NPC_HOME "/build/RVNoob/npc-ras-log.txt"
 const char *ras_file = RAS_PATH;
 FILE *ras_fp = NULL;
 

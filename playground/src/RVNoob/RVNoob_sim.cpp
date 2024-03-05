@@ -39,7 +39,7 @@ extern FILE *mtrace_fp;
 #endif
 
 #ifdef CONFIG_ITRACE
-#define ITRACE_PATH NPC_HOME "/build/RVnpc/RVNoob/npc-itrace-log.txt"
+#define ITRACE_PATH NPC_HOME "/build/RVNoob/npc-itrace-log.txt"
 char logbuf[128];
 FILE *itrace_fp;
 char *itrace_file = ITRACE_PATH;
@@ -145,9 +145,9 @@ int main(int argc, char **argv, char **env) {
 #ifdef CONFIG_DUMPWAVE
     top->trace(tfp, 99);
 #ifdef CONFIG_FSTWAVE
-    tfp->open("./build/RVnpc/RVNoob/RVNoob.fst");
+    tfp->open("./build/RVNoob/RVNoob.fst");
 #else
-    tfp->open("./build/RVnpc/RVNoob/RVNoob.vcd");
+    tfp->open("./build/RVNoob/RVNoob.vcd");
 #endif
 #endif
     clock_t start, end;

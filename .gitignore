@@ -13,7 +13,7 @@
 !build.sc
 !README.md
 build/
-mill
+!mill
 out/
 .bsp/
 .idea/
