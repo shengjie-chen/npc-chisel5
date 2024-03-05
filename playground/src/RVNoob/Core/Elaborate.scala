@@ -9,10 +9,18 @@ object RVNoobCoreGen extends App {
     )
 }
 
-object RVNoobGen extends App {
+object RVNoobTileGen extends App {
   (new ChiselStage)
     .execute(
       args,
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RVNoob()), CIRCTTargetAnnotation(CIRCTTarget.Verilog))
+      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RVNoobTile()), CIRCTTargetAnnotation(CIRCTTarget.Verilog))
+    )
+}
+
+object RVNoobSimGen extends App {
+  (new ChiselStage)
+    .execute(
+      args,
+      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RVNoobSim()), CIRCTTargetAnnotation(CIRCTTarget.Verilog))
     )
 }

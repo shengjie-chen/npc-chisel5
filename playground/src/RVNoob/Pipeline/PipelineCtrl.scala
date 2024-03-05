@@ -170,5 +170,3 @@ class PipelineCtrl extends Module with RVNoobConfig {
 //    hazard
 //  }
 //}
-
-

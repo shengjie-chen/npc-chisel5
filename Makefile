@@ -4,15 +4,16 @@ BUILD_DIR = ./build
 export NPC_HOME := $(abspath .)
 
 # design module: RVNoob ysyxSoCFull
-TOPNAME = RVNoob
+TOPNAME = RVNoobSim
+PRJNAME = RVNoob
 SRC_DIR = ./playground/src
 # name of object to generate the verilog of design
 TOPMODULE_GEN = $(TOPNAME)Gen
 
-SRC_CODE_DIR = $(shell find $(abspath $(SRC_DIR)) -maxdepth 2 -type d -name "$(TOPNAME)")
+SRC_CODE_DIR = $(shell find $(abspath $(SRC_DIR)) -maxdepth 2 -type d -name $(PRJNAME))
 GEN_DIR = $(subst $(abspath $(SRC_DIR)),$(BUILD_DIR),$(SRC_CODE_DIR))# $(subst FROM, TO, TEXT)，即将字符串TEXT中的子串FROM变为TO
 
-PACKAGE = $(subst /,.,$(subst $(abspath $(SRC_DIR))/,,$(SRC_CODE_DIR)))
+PACKAGE = $(subst /,.,$(subst $(abspath $(SRC_DIR))/,,$(SRC_CODE_DIR))).Core
 
 OBJ_DIR = $(GEN_DIR)/obj_dir
 VERILOG_GEN = Verilog_Gen
@@ -21,28 +22,28 @@ BIN_VCD = $(GEN_DIR)/$(TOPNAME)
 
 WAVE_FORMAT ?= FST #(FST, VCD)
 TRACE_FORMAT ?= --trace-fst
-WAVE_FILE ?= $(GEN_DIR)/$(TOPNAME).fst
+WAVE_FILE ?= $(GEN_DIR)/$(PRJNAME).fst
 ifeq ($(WAVE_FORMAT), VCD)
     TRACE_FORMAT := --trace
-	WAVE_FILE ?= $(GEN_DIR)/$(TOPNAME).vcd
+	WAVE_FILE ?= $(GEN_DIR)/$(PRJNAME).vcd
 endif
 
 # VERILATOR_CFLAGS += -MMD --build -cc  \
 # 					-O3 --x-assign fast --x-initial fast --noassert
 
 VERILATOR_CFLAGS += -cc --exe --build 
-# VERILATOR_CFLAGS += -O3 --timescale "1ns/1ns" --no-timing
-# VERILATOR_CFLAGS += -I$(YSYXSOC_HOME)/perip/uart16550/rtl -I$(YSYXSOC_HOME)/perip/spi/rtl
+VERILATOR_CFLAGS += -O3 --timescale "1ns/1ns" --no-timing
+#VERILATOR_CFLAGS += -I$(YSYXSOC_HOME)/perip/uart16550/rtl -I$(YSYXSOC_HOME)/perip/spi/rtl
 
 # project source
 SSRCS = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.scala")
 SSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")
 VSRCS = $(shell find $(abspath $(VERILOG_OBJ_DIR)) -name  "*.v")
 VSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")# add blackbox verilog file
-# VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
-CSRCS_BOARD = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME).cpp")#"Multiplexer_sim.cpp")#"*.c" -or -name "*.cc" -or -name "*.cpp")
-CSRCS_BOARD += $(SRC_AUTO_BIND)
+#VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
 CSRCS_VCD = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME)_sim.cpp")
+
+RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
@@ -50,16 +51,18 @@ CFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 LDFLAGS += -lSDL2 -lSDL2_image
 
 echo_val:
-	echo $(GEN_DIR)
-	echo $(OBJ_DIR)
-	echo $(VERILOG_OBJ_DIR)
+	@echo SRC_CODE_DIR:$(SRC_CODE_DIR)
+	@echo GEN_DIR:$(GEN_DIR)
+	@echo OBJ_DIR:$(OBJ_DIR)
+	@echo VERILOG_OBJ_DIR:$(VERILOG_OBJ_DIR)
+	@echo PACKAGE:$(PACKAGE)
 
 update_config_spmu:
-	@if grep -q "//\s*#define SPMU_ENABLE" $(SRC_CODE_DIR)/conf.h; then \
-    		sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(SRC_CODE_DIR)/RVNoobConfig.scala; \
+	@if grep -q "//\s*#define SPMU_ENABLE" $(SRC_CODE_DIR)/sim/conf.h; then \
+    		sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(RVNoob_CONFIG); \
     		echo "SPMU set to false"; \
     else \
-    		sed -i 's/\(val spmu_en: *Boolean = \)false/\1true/' $(SRC_CODE_DIR)/RVNoobConfig.scala; \
+    		sed -i 's/\(val spmu_en: *Boolean = \)false/\1true/' $(RVNoob_CONFIG); \
     		echo "SPMU set to true"; \
     fi
 
@@ -75,9 +78,18 @@ split_verilog:
 SOC_DIR = $(NPC_HOME)/build/soc
 tapeout:
 	rm -rf $(SOC_DIR)
-	sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(SRC_CODE_DIR)/RVNoobConfig.scala
-	sed -i 's/\(val tapeout: *Boolean = \)false/\1true/g' $(SRC_CODE_DIR)/RVNoobConfig.scala
-	./mill -i __.test.runMain RVNoob.RVNoobCoreGen
+	sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(RVNoob_CONFIG)
+	sed -i 's/\(val tapeout: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
+	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
+	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
+
+SOCSIM_DIR = $(NPC_HOME)/build/socsim
+socsim: update_config_spmu
+	rm -rf $(SOCSIM_DIR)
+	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+	sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
+	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
 	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
 
 verilog: $(VERILOG_OBJ_DIR)/$(TOPNAME).v
@@ -85,11 +97,12 @@ verilog: $(VERILOG_OBJ_DIR)/$(TOPNAME).v
 $(VERILOG_OBJ_DIR)/$(TOPNAME).v: update_config_spmu
 	$(call git_commit, "generate $(TOPNAME) verilog")
 #	echo $(SRC_CODE_DIR)
-	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(SRC_CODE_DIR)/RVNoobConfig.scala
+	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	rm -rf $(VERILOG_OBJ_DIR)
 	mkdir -p $(VERILOG_OBJ_DIR)
 	./mill -i __.test.runMain $(PACKAGE).$(TOPMODULE_GEN) -td $(VERILOG_OBJ_DIR)
-#	sed -i 's/val tapeout: Boolean = false/val tapeout: Boolean = true/g' $(SRC_CODE_DIR)/RVNoobConfig.scala
+#	sed -i 's/val tapeout: Boolean = false/val tapeout: Boolean = true/g' $(RVNoob_CONFIG)
 	make verilog_post_processing VPPFILE=$@
 
 verilog_post_processing:
@@ -104,7 +117,7 @@ IMG=../am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin
 # sdb itrace mtrace ftrace
 SDB=sdb_n  # 跳过sdb则改为sdb_n, 否则是sdb_y
 ARGS=$(SDB) elf=$(basename $(IMG)).elf diff=../nemu/build/riscv64-nemu-interpreter-so
-DISASM_CXXSRC = $(SRC_CODE_DIR)/disasm.cc
+DISASM_CXXSRC = $(SRC_CODE_DIR)/sim/disasm.cc
 DISASM_CXXFLAGS = $(shell llvm-config --cxxflags) -fPIE
 DISASM_LIBS = $(shell llvm-config --libs) -O3 -pie -ldl -lSDL2
 DISASM_LIBS += -fsanitize=address 
@@ -200,8 +213,7 @@ checkformat:
 
 clean:
 	-rm -rf $(BUILD_DIR)
-	rm *.ii
-	rm *.s
+	rm *.ii *.s *.o *.d
 
 clean_object:
 	rm -rf $(OBJ_DIR)

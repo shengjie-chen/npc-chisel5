@@ -270,23 +270,23 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   )
 
   // >>>>>>>>>>>>>> MEM mem_reg <<<<<<<<<<<<<<
-  mem_reg.in.pc              <> ex_reg.out.pc
-  mem_reg.in.snpc            <> ex_reg.out.snpc
-  mem_reg.in.inst            <> ex_reg.out.inst
-  mem_reg.in.src2            <> exe_src2_forward
-  mem_reg.in.mem_addr        <> exe.io.mem_addr
-  mem_reg.in.alu_res         <> exe.io.gp_out
-  mem_reg.in.B_en            <> exe.io.B_en
-  mem_reg.in.dnpc            <> dnpc_out
-  mem_reg.in.mem_ctrl        <> ex_reg.out.mem_ctrl
-  mem_reg.in.wb_rf_ctrl      <> ex_reg.out.wb_rf_ctrl
-  mem_reg.in.wb_csr_ctrl     <> ex_reg.out.wb_csr_ctrl
-  mem_reg.in.reg_en          <> ppl_ctrl.io.mem_reg_ctrl.en
-  mem_reg.in.valid           <> ex_reg.out.inst_valid
-  mem_reg.reset              <> (ppl_ctrl.io.mem_reg_ctrl.flush || reset.asBool)
-  mem_reg.in.br_pre          <> ex_reg.out.br_pre
-  mem_reg.in.br_info.taken   <> ex_reg.out.dnpc_ctrl.pc_mux
-  mem_reg.in.br_info.target  <> Mux(
+  mem_reg.in.pc            <> ex_reg.out.pc
+  mem_reg.in.snpc          <> ex_reg.out.snpc
+  mem_reg.in.inst          <> ex_reg.out.inst
+  mem_reg.in.src2          <> exe_src2_forward
+  mem_reg.in.mem_addr      <> exe.io.mem_addr
+  mem_reg.in.alu_res       <> exe.io.gp_out
+  mem_reg.in.B_en          <> exe.io.B_en
+  mem_reg.in.dnpc          <> dnpc_out
+  mem_reg.in.mem_ctrl      <> ex_reg.out.mem_ctrl
+  mem_reg.in.wb_rf_ctrl    <> ex_reg.out.wb_rf_ctrl
+  mem_reg.in.wb_csr_ctrl   <> ex_reg.out.wb_csr_ctrl
+  mem_reg.in.reg_en        <> ppl_ctrl.io.mem_reg_ctrl.en
+  mem_reg.in.valid         <> ex_reg.out.inst_valid
+  mem_reg.reset            <> (ppl_ctrl.io.mem_reg_ctrl.flush || reset.asBool)
+  mem_reg.in.br_pre        <> ex_reg.out.br_pre
+  mem_reg.in.br_info.taken <> ex_reg.out.dnpc_ctrl.pc_mux
+  mem_reg.in.br_info.target <> Mux(
     ex_reg.out.br_info.br_type === br_type_id("typeb").U || ex_reg.out.br_info.br_type === br_type_id("not_br").U,
     ex_reg.out.snpc,
     dnpc_out

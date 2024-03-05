@@ -1,23 +1,30 @@
 package RVNoob.Core
 
-import RVNoob.Axi.AxiSlaveMem
+import RVNoob.Axi.AxiIO
 import RVNoob.Cache.S011HD1P_X32Y2D128_BW
 import RVNoob.Fpga.SPRAM_WRAP
 import chisel3._
 
 import scala.math.pow
 
-class RVNoob extends Module with ext_function with RVNoobConfig {
+class RVNoobTile extends Module with ext_function with RVNoobConfig {
   val io = IO(new Bundle {
     val pc        = Output(UInt(addr_w.W))
     val ebreak    = Output(Bool())
     val diff_en   = Output(Bool())
     val diff_pc   = Output(UInt(addr_w.W))
     val diff_inst = Output(UInt(inst_w.W))
+    val axi_pc    = Output(UInt(addr_w.W))
     val inst_cnt  = Output(UInt(xlen.W))
+
+    val interrupt = Input(Bool())
+    // >>>>>>>>>>>>>> AXI <<<<<<<<<<<<<<
+    val master = new AxiIO
+    val slave  = Flipped(new AxiIO)
   })
   // >>>>>>>>>>>>>> RVNoobCore <<<<<<<<<<<<<<
-  val core = RVNoobCore()
+  val core = Module(new RVNoobCore())
+
   // >>>>>>>>>>>>>> Inst Cache Sram <<<<<<<<<<<<<<
   val sram0 = if (!fpga) Some(Module(new S011HD1P_X32Y2D128_BW)) else None
   val sram1 = if (!fpga) Some(Module(new S011HD1P_X32Y2D128_BW)) else None
@@ -37,17 +44,24 @@ class RVNoob extends Module with ext_function with RVNoobConfig {
     if (fpga)
       Some(Seq.fill(16)(Module(new SPRAM_WRAP(8, (DCacheSize * pow(2, 10) / (128 / 8)).toInt, "block"))))
     else None
-  // >>>>>>>>>>>>>> SAXI <<<<<<<<<<<<<<
-  val axi_pmem = Module(new AxiSlaveMem)
 
-  io.pc        <> core.io.pc.get
-  io.ebreak    <> core.io.ebreak.get
-  io.diff_en   <> core.io.diff_en.get
-  io.diff_pc   <> core.io.diff_pc.get
-  io.diff_inst <> core.io.diff_inst.get
-  io.inst_cnt  <> core.io.inst_cnt.get
-
-  if (!fpga) {
+  // >>>>>>>>>>>>>> FPGA Cache Bram <<<<<<<<<<<<<<
+  if (fpga) {
+    for (i <- 0 to 15) {
+      i_bram.get(i).io.en    <> core.io.i_bram.get(i).en
+      i_bram.get(i).io.wr    <> core.io.i_bram.get(i).wr
+      i_bram.get(i).io.addr  <> core.io.i_bram.get(i).addr
+      i_bram.get(i).io.wdata <> core.io.i_bram.get(i).wdata
+      i_bram.get(i).io.rdata <> core.io.i_bram.get(i).rdata
+    }
+    for (i <- 0 to 15) {
+      d_bram.get(i).io.en    <> core.io.d_bram.get(i).en
+      d_bram.get(i).io.wr    <> core.io.d_bram.get(i).wr
+      d_bram.get(i).io.addr  <> core.io.d_bram.get(i).addr
+      d_bram.get(i).io.wdata <> core.io.d_bram.get(i).wdata
+      d_bram.get(i).io.rdata <> core.io.d_bram.get(i).rdata
+    }
+  } else {
     // >>>>>>>>>>>>>> Inst Cache Sram <<<<<<<<<<<<<<
     sram0.get.io.CLK  <> clock
     sram0.get.io.Q    <> core.io.sram0.get.rdata
@@ -114,58 +128,51 @@ class RVNoob extends Module with ext_function with RVNoobConfig {
     sram7.get.io.A    <> core.io.sram7.get.addr
     sram7.get.io.D    <> core.io.sram7.get.wdata
   }
-  // >>>>>>>>>>>>>> FPGA Cache Bram <<<<<<<<<<<<<<
-  if (fpga) {
-    for (i <- 0 to 15) {
-      i_bram.get(i).io.en    <> core.io.i_bram.get(i).en
-      i_bram.get(i).io.wr    <> core.io.i_bram.get(i).wr
-      i_bram.get(i).io.addr  <> core.io.i_bram.get(i).addr
-      i_bram.get(i).io.wdata <> core.io.i_bram.get(i).wdata
-      i_bram.get(i).io.rdata <> core.io.i_bram.get(i).rdata
-    }
-    for (i <- 0 to 15) {
-      d_bram.get(i).io.en    <> core.io.d_bram.get(i).en
-      d_bram.get(i).io.wr    <> core.io.d_bram.get(i).wr
-      d_bram.get(i).io.addr  <> core.io.d_bram.get(i).addr
-      d_bram.get(i).io.wdata <> core.io.d_bram.get(i).wdata
-      d_bram.get(i).io.rdata <> core.io.d_bram.get(i).rdata
-    }
-  }
-  // >>>>>>>>>>>>>> SAXI <<<<<<<<<<<<<<
-  axi_pmem.io.S_AXI_ACLK    <> clock
-  axi_pmem.io.S_AXI_ARESETN <> !reset.asBool
-  axi_pmem.io.S_AXI_AWVALID <> core.io.master.awvalid
-  axi_pmem.io.S_AXI_AWREADY <> core.io.master.awready
-  axi_pmem.io.S_AXI_AWID    <> core.io.master.awid
-  axi_pmem.io.S_AXI_AWADDR  <> core.io.master.awaddr
-  axi_pmem.io.S_AXI_AWLEN   <> core.io.master.awlen
-  axi_pmem.io.S_AXI_AWSIZE  <> core.io.master.awsize
-  axi_pmem.io.S_AXI_AWBURST <> core.io.master.awburst
-  axi_pmem.io.S_AXI_WVALID  <> core.io.master.wvalid
-  axi_pmem.io.S_AXI_WREADY  <> core.io.master.wready
-  axi_pmem.io.S_AXI_WDATA   <> core.io.master.wdata
-  axi_pmem.io.S_AXI_WSTRB   <> core.io.master.wstrb
-  axi_pmem.io.S_AXI_WLAST   <> core.io.master.wlast
-  axi_pmem.io.S_AXI_BVALID  <> core.io.master.bvalid
-  axi_pmem.io.S_AXI_BREADY  <> core.io.master.bready
-  axi_pmem.io.S_AXI_BID     <> core.io.master.bid
-  axi_pmem.io.S_AXI_BRESP   <> core.io.master.bresp
-  axi_pmem.io.S_AXI_ARVALID <> core.io.master.arvalid
-  axi_pmem.io.S_AXI_ARREADY <> core.io.master.arready
-  axi_pmem.io.S_AXI_ARID    <> core.io.master.arid
-  axi_pmem.io.S_AXI_ARADDR  <> core.io.master.araddr
-  axi_pmem.io.S_AXI_ARLEN   <> core.io.master.arlen
-  axi_pmem.io.S_AXI_ARSIZE  <> core.io.master.arsize
-  axi_pmem.io.S_AXI_ARBURST <> core.io.master.arburst
-  axi_pmem.io.S_AXI_RVALID  <> core.io.master.rvalid
-  axi_pmem.io.S_AXI_RREADY  <> core.io.master.rready
-  axi_pmem.io.S_AXI_RID     <> core.io.master.rid
-  axi_pmem.io.S_AXI_RDATA   <> core.io.master.rdata
-  axi_pmem.io.S_AXI_RRESP   <> core.io.master.rresp
-  axi_pmem.io.S_AXI_RLAST   <> core.io.master.rlast
 
-  axi_pmem.io.PC <> core.io.axi_pc.get
+  io.interrupt <> core.io.interrupt
+
+  // >>>>>>>>>>>>>> AXI <<<<<<<<<<<<<<
+  io.master <> core.io.master
+  io.slave  <> core.io.slave
+
+  io.pc        <> core.io.pc.get
+  io.ebreak    <> core.io.ebreak.get
+  io.diff_en   <> core.io.diff_en.get
+  io.diff_pc   <> core.io.diff_pc.get
+  io.diff_inst <> core.io.diff_inst.get
+  io.axi_pc    <> core.io.axi_pc.get
+  io.inst_cnt  <> core.io.inst_cnt.get
 
 }
 
+object RVNoobTile {
+  def apply(): RVNoobTile = {
+    val rvnoob = Module(new RVNoobTile)
 
+    /* **********************************
+     * 没有实现io_interrupt和Core顶层AXI4 slave口，将这些接口输出置零，输入悬空
+     * ********************************* */
+    rvnoob.io.interrupt := DontCare
+
+    rvnoob.io.slave.awvalid := DontCare
+    rvnoob.io.slave.awaddr  := DontCare
+    rvnoob.io.slave.awid    := DontCare
+    rvnoob.io.slave.awlen   := DontCare
+    rvnoob.io.slave.awsize  := DontCare
+    rvnoob.io.slave.awburst := DontCare
+    rvnoob.io.slave.wvalid  := DontCare
+    rvnoob.io.slave.wdata   := DontCare
+    rvnoob.io.slave.wstrb   := DontCare
+    rvnoob.io.slave.wlast   := DontCare
+    rvnoob.io.slave.bready  := DontCare
+    rvnoob.io.slave.arvalid := DontCare
+    rvnoob.io.slave.araddr  := DontCare
+    rvnoob.io.slave.arid    := DontCare
+    rvnoob.io.slave.arlen   := DontCare
+    rvnoob.io.slave.arsize  := DontCare
+    rvnoob.io.slave.arburst := DontCare
+    rvnoob.io.slave.rready  := DontCare
+
+    rvnoob
+  }
+}

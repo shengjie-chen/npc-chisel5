@@ -5,7 +5,10 @@ object BoothShiftMultiplierGen extends App {
   (new ChiselStage)
     .execute(
       Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new BoothShiftMultiplier()), CIRCTTargetAnnotation(CIRCTTarget.Verilog))
+      Seq(
+        chisel3.stage.ChiselGeneratorAnnotation(() => new BoothShiftMultiplier()),
+        CIRCTTargetAnnotation(CIRCTTarget.Verilog)
+      )
     )
 }
 

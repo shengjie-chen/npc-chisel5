@@ -26,7 +26,10 @@ trait RVNoobConfig extends util_function with BranchConfig {
   val soc_sim:         Boolean = false
   val simplify_design: Boolean = !tapeout && !soc_sim
   val ysyxid = "ysyx_22040495"
-  require((tapeout && soc_sim) == false, "tapout and soc_sim can't be true at the same time")
+  require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
+  if (tapeout) {
+    require(spmu_en, "spmu_en must be true when tapeout is true")
+  }
   def getClassName: String = this.getClass.toString.split("\\.").last
 }
 

@@ -14,6 +14,7 @@
 !README.md
 build/
 !mill
+!wavefile
 out/
 .bsp/
 .idea/

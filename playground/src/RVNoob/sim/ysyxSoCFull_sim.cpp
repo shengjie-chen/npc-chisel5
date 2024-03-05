@@ -6,8 +6,8 @@
  * @FilePath: /npc/playground/src/RVnpc/RVNoob/RVNoob_sim.cpp
  * @Description: 对RVNoob处理器进行仿真的主文件
  */
-#include "VRVNoob.h"
-#include "VRVNoob__Dpi.h"
+#include "VRVNoobSim.h"
+#include "VRVNoobSim__Dpi.h"
 #include "svdpi.h"
 #include "time.h"
 #include "verilated.h"
@@ -47,7 +47,7 @@ FILE *itrace_fp;
 char *itrace_file = ITRACE_PATH;
 #endif
 
-VRVNoob *top = new VRVNoob;
+VRVNoobSim *top = new VRVNoobSim;
 #ifdef CONFIG_DUMPWAVE
 #ifdef CONFIG_FSTWAVE
 VerilatedFstC *tfp = new VerilatedFstC;

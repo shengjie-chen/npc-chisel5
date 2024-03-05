@@ -76,5 +76,3 @@ class BoothShiftMultiplier extends Module with RVNoobConfig {
   override def desiredName = if (tapeout) ysyxid + "_" + getClassName else getClassName
 
 }
-
-

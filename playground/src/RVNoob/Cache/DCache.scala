@@ -459,7 +459,7 @@ class DCache(
 
   // ********************************** Output **********************************
   io.miss       := inpmem_miss || mmio_read || mmio_write || fencei_state
-  out_rvalid := (hit && inpmem && io.ren) || mmio_read_ready
+  out_rvalid    := (hit && inpmem && io.ren) || mmio_read_ready
   io.out_rvalid := out_rvalid
 
   when(RegNext(inpmem, 0.B)) {

@@ -7,7 +7,7 @@
  * @Description: difftest相关的变量与函数
  */
 #include "RVNoob.h"
-#include "VRVNoob.h"
+#include "VRVNoobSim.h"
 #include "common.h"
 #include "dlfcn.h"
 
@@ -15,7 +15,7 @@ extern CPU_state cpu_state;
 extern NPCState npc_state;
 extern uint64_t *cpu_gpr;
 extern uint64_t *cpu_csr;
-extern VRVNoob *top;
+extern VRVNoobSim *top;
 
 char *diff_file = NULL;
 
