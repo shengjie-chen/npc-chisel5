@@ -1,6 +1,6 @@
 //package RVNoob.Cache
 //
-//import RVNoob.RVNoobConfig
+//import RVNoob.Core.RVNoobConfig
 //import chisel3._
 //import chisel3.util._
 //import scala.math.pow

@@ -1,5 +1,5 @@
 package RVNoob.MulDiv
-import RVNoob.RVNoobConfig
+import RVNoob.Core.RVNoobConfig
 import chisel3._
 
 class BoothTransform extends Module with RVNoobConfig {

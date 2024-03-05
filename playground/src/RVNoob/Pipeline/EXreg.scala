@@ -1,7 +1,7 @@
 package RVNoob.Pipeline
 
 import RVNoob.Branch._
-import RVNoob._
+import RVNoob.Core._
 import chisel3._
 import chisel3.util._
 

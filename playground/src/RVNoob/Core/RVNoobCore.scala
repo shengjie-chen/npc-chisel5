@@ -1,4 +1,4 @@
-package RVNoob
+package RVNoob.Core
 
 import RVNoob.Axi._
 import RVNoob.Branch._

@@ -1,4 +1,4 @@
-package RVNoob
+package RVNoob.Core
 import RVNoob.Axi._
 import chisel3._
 import chisel3.util._

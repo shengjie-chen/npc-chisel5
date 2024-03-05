@@ -1,6 +1,6 @@
 package RVNoob.Branch
 
-import RVNoob._
+import RVNoob.Core._
 import chisel3._
 
 class PHTUpdate extends Bundle with RVNoobConfig {

@@ -1,5 +1,5 @@
 package RVNoob.Axi
-import RVNoob.RVNoobConfig
+import RVNoob.Core.RVNoobConfig
 import chisel3._
 import chisel3.util._
 

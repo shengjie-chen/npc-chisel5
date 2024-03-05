@@ -1,6 +1,6 @@
 package RVNoob.MulDiv
 
-import RVNoob.RVNoobConfig
+import RVNoob.Core.RVNoobConfig
 import chisel3._
 
 class ShiftDivider extends Module with RVNoobConfig {

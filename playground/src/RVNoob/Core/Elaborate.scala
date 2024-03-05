@@ -1,4 +1,4 @@
-package RVNoob
+package RVNoob.Core
 import circt.stage._
 
 object RVNoobCoreGen extends App {

@@ -1,6 +1,6 @@
 package RVNoob.Cache
 
-import RVNoob.{Judge_Load_op, MemCtrlIO, RVNoobConfig, ext_function}
+import RVNoob.Core.{Judge_Load_op, MemCtrlIO, RVNoobConfig, ext_function}
 import chisel3._
 import chisel3.util.MuxCase
 

@@ -1,6 +1,6 @@
 package RVNoob.Axi
 
-import RVNoob.RVNoobConfig
+import RVNoob.Core.RVNoobConfig
 import chisel3._
 
 class AxiRegSlice extends Module with RVNoobConfig {

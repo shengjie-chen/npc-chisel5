@@ -1,4 +1,4 @@
-package RVNoob
+package RVNoob.Core
 
 import RVNoob.MulDiv.{BoothShiftMultiplier, ShiftDivider}
 import chisel3._
