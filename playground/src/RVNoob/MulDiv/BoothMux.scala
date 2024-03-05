@@ -7,5 +7,5 @@ class BoothMux extends Module {
     val shift_4bit = Output(Bool())
   })
 
-  io.shift_4bit := io.next_3bit.andR() || !io.next_3bit.orR()
+  io.shift_4bit := io.next_3bit.andR || !io.next_3bit.orR
 }

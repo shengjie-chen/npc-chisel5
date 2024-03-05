@@ -95,7 +95,7 @@ class ALU extends Module with ALU_op with ext_function with RVNoobConfig with Ju
 
   // 这里巨大优化空间，但等到后面再说
   alu_src1    := io.src1
-  alu_src2    := Mux(sub, ((~io.src2).asUInt() + 1.U), io.src2)
+  alu_src2    := Mux(sub, ((~io.src2).asUInt + 1.U), io.src2)
   add_res     := alu_src1 +& alu_src2
   io.mem_addr := add_res
 
@@ -142,7 +142,7 @@ class ALU extends Module with ALU_op with ext_function with RVNoobConfig with Ju
       (add || sub) -> add_res(63, 0),
       sll -> (alu_src1 << alu_src2(5, 0)),
       srl -> (alu_src1 >> alu_src2(5, 0)),
-      sra -> (alu_src1.asSInt() >> alu_src2(5, 0)).asUInt(),
+      sra -> (alu_src1.asSInt >> alu_src2(5, 0)).asUInt,
       xor -> (alu_src1 ^ alu_src2),
       or -> (alu_src1 | alu_src2),
       and -> (alu_src1 & alu_src2),
@@ -150,20 +150,20 @@ class ALU extends Module with ALU_op with ext_function with RVNoobConfig with Ju
       (div || divs || divw || divsw) -> alu_div_res,
       (rem || rems || remw || remsw) -> alu_rem_res,
       srlw -> (alu_src1(31, 0) >> alu_src2(4, 0)),
-      sraw -> (alu_src1(31, 0).asSInt() >> alu_src2(4, 0)).asUInt(),
+      sraw -> (alu_src1(31, 0).asSInt >> alu_src2(4, 0)).asUInt,
       sllw -> (alu_src1 << alu_src2(4, 0)),
-      andinv -> (alu_src2 & (~alu_src1).asUInt())
+      andinv -> (alu_src2 & (~alu_src1).asUInt)
       //      mul -> (alu_src1 * alu_src2),
       //        div -> (alu_src1 / alu_src2),
       //      rem -> (alu_src1 % alu_src2),
       //      mulh -> ((alu_src1 * alu_src2)(127, 64)),
-      //      mulhs -> ((alu_src1.asSInt() * alu_src2.asSInt())(127, 64)).asUInt(),
-      //      mulhsu -> ((alu_src1.asSInt() * alu_src2)(127, 64).asUInt()),
-      //        divs -> (alu_src1.asSInt() / alu_src2.asSInt()).asUInt(),
-      //        divsw -> (alu_src1(31, 0).asSInt() / alu_src2(31, 0).asSInt()).asUInt(),
+      //      mulhs -> ((alu_src1.asSInt * alu_src2.asSInt)(127, 64)).asUInt,
+      //      mulhsu -> ((alu_src1.asSInt * alu_src2)(127, 64).asUInt),
+      //        divs -> (alu_src1.asSInt / alu_src2.asSInt).asUInt,
+      //        divsw -> (alu_src1(31, 0).asSInt / alu_src2(31, 0).asSInt).asUInt,
       //        divw -> (alu_src1(31, 0) / alu_src2(31, 0)),
-      //      rems -> (alu_src1.asSInt() % alu_src2.asSInt()).asUInt(),
-      //      remsw -> (alu_src1(31, 0).asSInt() % alu_src2(31, 0).asSInt()).asUInt(),
+      //      rems -> (alu_src1.asSInt % alu_src2.asSInt).asUInt,
+      //      remsw -> (alu_src1(31, 0).asSInt % alu_src2(31, 0).asSInt).asUInt,
       //      remw -> (alu_src1(31, 0) % alu_src2(31, 0)),
     )
   )
@@ -222,9 +222,9 @@ class Judge extends Module with RVNoobConfig with Judge_op with ext_function {
   io.new_res := MuxCase(
     io.old_res,
     Array(
-      ((io.judge_op === jop_slt) || (io.judge_op === jop_sltu)) -> io.less.asUInt(),
-      //      (io.judge_op === jop_slt) -> io.less.asUInt(),
-      //      (io.judge_op === jop_sltu) -> ((!io.less)&&(!zero)).asUInt(),
+      ((io.judge_op === jop_slt) || (io.judge_op === jop_sltu)) -> io.less.asUInt,
+      //      (io.judge_op === jop_slt) -> io.less.asUInt,
+      //      (io.judge_op === jop_sltu) -> ((!io.less)&&(!zero)).asUInt,
       (io.judge_op === jop_sextw) -> sext_64(io.old_res(31, 0))
       // ,
       // (io.judge_op === jop_sexthw) -> sext_64(io.old_res(15, 0)),
@@ -264,13 +264,13 @@ class Judge extends Module with RVNoobConfig with Judge_op with ext_function {
 //
 //  //  alu_div_res := Mux(
 //  //    div || divs,
-//  //    Mux(div, (alu_src1 / alu_src2), (alu_src1.asSInt() / alu_src2.asSInt()).asUInt()),
-//  //    Mux(divw, (alu_src1(31, 0) / alu_src2(31, 0)), (alu_src1(31, 0).asSInt() / alu_src2(31, 0).asSInt()).asUInt())
+//  //    Mux(div, (alu_src1 / alu_src2), (alu_src1.asSInt / alu_src2.asSInt).asUInt),
+//  //    Mux(divw, (alu_src1(31, 0) / alu_src2(31, 0)), (alu_src1(31, 0).asSInt / alu_src2(31, 0).asSInt).asUInt)
 //  //  )
 //}
 
 object EXEGen extends App {
-  (new chisel3.stage.ChiselStage)
+  (new circt.stage.ChiselStage)
     .execute(
       Array("--target-dir", "/home/jiexxpu/ysyx/ysyx-workbench/npc/build/RVnpc/RVNoob"),
       Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new EXE()))

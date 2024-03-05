@@ -21,7 +21,7 @@ class WBregOutIO extends PipelineOutIO with WBregSignal {}
 
 class WBregInIO extends PipelineInIO with WBregSignal {}
 
-class WBreg extends MultiIOModule with RVNoobConfig {
+class WBreg extends Module with RVNoobConfig {
   val in  = IO(Input(new WBregInIO))
   val out = IO(Output(new WBregOutIO))
   if (!tapeout) {
@@ -36,7 +36,7 @@ class WBreg extends MultiIOModule with RVNoobConfig {
   out.wb_rf_ctrl  := RegEnable(in.wb_rf_ctrl, 0.U.asTypeOf(new WbRfCtrlIO), in.reg_en)
   out.wb_csr_ctrl := RegEnable(in.wb_csr_ctrl, 0.U.asTypeOf(new WbCsrCtrlIO), in.reg_en)
 
-  val reg_en_t   = RegNext(in.reg_en.asBool(), 0.B)
+  val reg_en_t   = RegNext(in.reg_en.asBool, 0.B)
   val mem_data_t = RegNext(out.mem_data, 0.U)
   out.mem_data := Mux(reg_en_t, in.mem_data, mem_data_t)
 

@@ -4,10 +4,10 @@ import RVNoob._
 import chisel3._
 import chisel3.util._
 
-class BTBArrays extends Bundle with RVNoobConfig {
+class BTBArrays(tagWidth: Int, btaWidth: Int) extends Bundle {
   val valid   = Bool()
-  val tag     = UInt(BTBTagWidth.W)
-  val bta     = UInt((addr_w - 2 - BTBBtaComWidth).W) // branch target address
+  val tag     = UInt(tagWidth.W)
+  val bta     = UInt(btaWidth.W) // branch target address
   val br_type = UInt(2.W) // branch type
 }
 
@@ -32,9 +32,13 @@ class BTB extends Module with RVNoobConfig {
     val hit     = Output(Bool())
     val update  = Input(new BTBUpdate)
   })
+  val btaWidth = addr_w - 2 - BTBBtaComWidth
 
   val btb_arrays =
-    RegInit(Vec(BTBWay, Vec(BTBSet, new BTBArrays)), 0.B.asTypeOf(Vec(BTBWay, Vec(BTBSet, new BTBArrays))))
+    RegInit(
+      Vec(BTBWay, Vec(BTBSet, new BTBArrays(BTBTagWidth, btaWidth))),
+      0.B.asTypeOf(Vec(BTBWay, Vec(BTBSet, new BTBArrays(BTBTagWidth, btaWidth))))
+    )
   val ret_arrays = RegInit(Vec(BTBSet, new RetArrays), 0.B.asTypeOf(Vec(BTBSet, new RetArrays)))
   val bta_arrays = RegInit(Vec(BTBSet, UInt(BTBBtaComWidth.W)), 0.B.asTypeOf(Vec(BTBSet, UInt(BTBBtaComWidth.W))))
 
@@ -44,7 +48,7 @@ class BTB extends Module with RVNoobConfig {
     for (i <- 0 until BTBTagWidth) {
       hash_value(i) := addr(i) ^ addr(i + BTBTagWidth)
     }
-    hash_value.asUInt()
+    hash_value.asUInt
   }
 
   def get_tag(addr: UInt): UInt = {
@@ -61,7 +65,7 @@ class BTB extends Module with RVNoobConfig {
   val btb_hit_oh  = Wire(Vec(BTBWay, Bool()))
   val btb_hit_way = OHToUInt(btb_hit_oh)
   val ret_hit     = Wire(Bool())
-  val hit         = btb_hit_oh.asUInt().orR || ret_hit
+  val hit         = btb_hit_oh.asUInt.orR || ret_hit
   btb_hit_oh := 0.B.asTypeOf(btb_hit_oh)
   for (w <- 0 until BTBWay) {
     btb_hit_oh(w) := (btb_arrays(w)(set_idx).tag === read_tag) && btb_arrays(w)(set_idx).valid
@@ -112,12 +116,4 @@ class BTB extends Module with RVNoobConfig {
 
   override def desiredName = if (tapeout) ysyxid + "_" + getClassName else getClassName
 
-}
-
-object BTBGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new BTB()))
-    )
 }

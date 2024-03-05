@@ -90,8 +90,8 @@ class DCache(
     dirty_set(i) := tag_arrays(0)(i).dirty_bit || tag_arrays(1)(i).dirty_bit ||
     tag_arrays(2)(i).dirty_bit || tag_arrays(3)(i).dirty_bit
   }
-  fencei_ok := !dirty_set.asUInt().orR()
-  val fencei_set = PriorityEncoder(dirty_set.asUInt())
+  fencei_ok := !dirty_set.asUInt.orR
+  val fencei_set = PriorityEncoder(dirty_set.asUInt)
   val fencei_way = PriorityEncoder(
     Seq(
       tag_arrays(0)(fencei_set).dirty_bit,
@@ -142,7 +142,7 @@ class DCache(
   // >>>>>>>>>>>>>> 命中信号 <<<<<<<<<<<<<<
   val hit_oh  = Wire(Vec(ways, Bool()))
   val hit_way = OHToUInt(hit_oh)
-  val hit     = hit_oh.asUInt().orR
+  val hit     = hit_oh.asUInt.orR
   hit_oh := 0.B.asTypeOf(hit_oh)
   when(io.ren || io.wen) {
     for (w <- 0 until ways) {
@@ -208,7 +208,7 @@ class DCache(
   // WEN
   data_wen := allocate_state || (hit && io.wen)
   // BWEN
-  val data_shift = (Mux(allocate_state, Mux(allocate_cnt(0), 8.U, 0.U), addr_offset(3, 0)) << 3).asUInt()
+  val data_shift = (Mux(allocate_state, Mux(allocate_cnt(0), 8.U, 0.U), addr_offset(3, 0)) << 3).asUInt
   val bwen_temp = MuxCase(
     0.U,
     Array(
@@ -223,7 +223,7 @@ class DCache(
     expandedSignals(i) := Fill(8, bwen_temp(i))
   }
   data_bwen := expandedSignals.asUInt
-  //  val bwen_temp  = Cat(0.U(64.W), 0xffffffffffffffffL.S(64.W).asUInt())
+  //  val bwen_temp  = Cat(0.U(64.W), 0xffffffffffffffffL.S(64.W).asUInt)
   //  data_bwen := MuxCase(
   //    0.U,
   //    Array(
@@ -310,7 +310,7 @@ class DCache(
     io.axi_rctrl.len   := 0.U
   }.otherwise {
     io.axi_rctrl.size  := 3.U
-    io.axi_rctrl.addr  := io.addr & (~0x1f.U(inst_w.W)).asUInt()
+    io.axi_rctrl.addr  := io.addr & (~0x1f.U(inst_w.W)).asUInt
     io.axi_rctrl.burst := 1.U
     io.axi_rctrl.len   := 3.U
   }
@@ -404,11 +404,11 @@ class DCache(
   }
 
   when(inpmem_op && hit) {
-    PLRU_bits(addr_index)(0) := hit_oh.asUInt()(1, 0).orR
-    when(hit_oh.asUInt()(1, 0).orR) {
-      PLRU_bits(addr_index)(1) := hit_oh.asUInt()(0)
+    PLRU_bits(addr_index)(0) := hit_oh.asUInt(1, 0).orR
+    when(hit_oh.asUInt(1, 0).orR) {
+      PLRU_bits(addr_index)(1) := hit_oh.asUInt(0)
     }.otherwise {
-      PLRU_bits(addr_index)(2) := hit_oh.asUInt()(2)
+      PLRU_bits(addr_index)(2) := hit_oh.asUInt(2)
     }
   }
   if (isICache) {
@@ -476,10 +476,10 @@ class DCache(
   if (!tapeout && spmu_en) {
     //    val write_valid_posedge = io.wen && !RegNext(io.wen, 0.B)
     //    val read_valid_posedge  = io.ren && !RegNext(io.ren, 0.B)
-    val dpi_cache_cnt = if (isICache) Module(new DpiICacheCnt) else Module(new DpiDCacheCnt)
-    dpi_cache_cnt.io.clk   := clock
-    dpi_cache_cnt.io.valid := io.in_valid && (io.wen || io.ren) && inpmem
-    dpi_cache_cnt.io.miss  := inpmem_miss
+    val dpi_cache_cnt = if (isICache) Module(new DpiICacheCnt).io else Module(new DpiDCacheCnt).io
+    dpi_cache_cnt.clk   := clock
+    dpi_cache_cnt.valid := io.in_valid && (io.wen || io.ren) && inpmem
+    dpi_cache_cnt.miss  := inpmem_miss
   }
 
   override def getClassName: String = if (isICache) "ICache" else "DCache"
@@ -534,12 +534,4 @@ object DCache extends RVNoobConfig {
     }
     cache
   }
-}
-
-object DCacheGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new DCache()))
-    )
 }

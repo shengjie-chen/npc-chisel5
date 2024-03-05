@@ -76,7 +76,7 @@
 //  // >>>>>>>>>>>>>> 命中信号 <<<<<<<<<<<<<<
 //  val hit_oh  = Wire(Vec(ways, Bool()))
 //  val hit_way = OHToUInt(hit_oh)
-//  val hit     = hit_oh.asUInt().orR
+//  val hit     = hit_oh.asUInt.orR
 //  hit_oh := 0.B.asTypeOf(hit_oh)
 //  when(io.ren || io.wen) {
 //    for (w <- 0 until ways) {
@@ -122,8 +122,8 @@
 //  // WEN
 //  data_wen := (!replace_dirty && !hit) || (hit && io.wen)
 //  // BWEN
-//  val data_shift = (Mux(!replace_dirty && !hit, pmem_read_ok_addr(3, 0), addr_offset(3, 0)) << 3).asUInt()
-//  val bwen_temp  = Cat(0.U(64.W), 0xffffffffffffffffL.S(64.W).asUInt())
+//  val data_shift = (Mux(!replace_dirty && !hit, pmem_read_ok_addr(3, 0), addr_offset(3, 0)) << 3).asUInt
+//  val bwen_temp  = Cat(0.U(64.W), 0xffffffffffffffffL.S(64.W).asUInt)
 //  data_bwen := MuxCase(
 //    0.U,
 //    Array(
@@ -166,7 +166,7 @@
 //  // >>>>>>>>>>>>>> Input Logic <<<<<<<<<<<<<<
 //  // Read signal
 //  when(mmio_read) {
-//    pmem_raddr := io.addr & (~0x7.U(addrWidth.W)).asUInt()
+//    pmem_raddr := io.addr & (~0x7.U(addrWidth.W)).asUInt
 //  }.otherwise {
 //    pmem_raddr := Cat(addr_tag, addr_index, allocate_cnt(1, 0), 0.U((byteOffsetWidth - 2).W))
 //  }
@@ -174,7 +174,7 @@
 //  // Write signal
 //  pmem_wen := (mmio_write && io.valid) || replace_valid
 //  when(mmio_write && io.valid) {
-//    pmem_waddr := io.addr & (~0x7.U(addrWidth.W)).asUInt()
+//    pmem_waddr := io.addr & (~0x7.U(addrWidth.W)).asUInt
 //    pmem_wdata := (io.wdata << (pmem_shift * 8.U))
 //    pmem_wmask := MuxCase(
 //      "b11111111".U,
@@ -214,11 +214,11 @@
 //
 //  // ********************************** Replace信号 **********************************
 //  when(inpmem_op && hit) {
-//    PLRU_bits(addr_index)(0) := hit_oh.asUInt()(1, 0).orR
-//    when(hit_oh.asUInt()(1, 0).orR) {
-//      PLRU_bits(addr_index)(1) := hit_oh.asUInt()(0)
+//    PLRU_bits(addr_index)(0) := hit_oh.asUInt(1, 0).orR
+//    when(hit_oh.asUInt(1, 0).orR) {
+//      PLRU_bits(addr_index)(1) := hit_oh.asUInt(0)
 //    }.otherwise {
-//      PLRU_bits(addr_index)(2) := hit_oh.asUInt()(2)
+//      PLRU_bits(addr_index)(2) := hit_oh.asUInt(2)
 //    }
 //  }
 //  replace_way := Cat(
@@ -290,7 +290,7 @@
 //}
 //
 //object DCacheOldGen extends App {
-//  (new chisel3.stage.ChiselStage)
+//  (new circt.stage.ChiselStage)
 //    .execute(
 //      Array("--target-dir", "./build/test"),
 //      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new DCacheOld()))

@@ -68,11 +68,11 @@ class Clint extends Module with RVNoobConfig {
   strb := FillInterleaved(8, io.wctrl.strb)
   when(io.wctrl.en) {
     when(io.wctrl.addr >= 0x0200bff8.U && io.wctrl.addr < 0x0200c000.U) {
-      mtime               := io.wctrl.data & strb | mtime & (~strb).asUInt()
+      mtime               := io.wctrl.data & strb | mtime & (~strb).asUInt
       io.wctrl.whandshake := 1.B
       io.wctrl.bhandshake := 1.B
     }.elsewhen(io.wctrl.addr >= 0x02004000.U && io.wctrl.addr < 0x02004010.U) {
-      mtimecmp            := io.wctrl.data & strb | mtime & (~mtimecmp).asUInt()
+      mtimecmp            := io.wctrl.data & strb | mtime & (~mtimecmp).asUInt
       io.wctrl.whandshake := 1.B
       io.wctrl.bhandshake := 1.B
     }

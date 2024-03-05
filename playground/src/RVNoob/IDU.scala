@@ -139,8 +139,8 @@ class IDU extends Module with IDU_op with ext_function with RVNoobConfig {
   immI := Cat(sext(io.inst(31, 20), 12), io.inst(31, 20))
   immU := Cat(sext(io.inst(31, 12), 20, 12), io.inst(31, 12), 0.U(12.W))
   immS := Cat(sext(io.inst(31, 25), 12), io.inst(31, 25), io.inst(11, 7))
-  immJ := Cat(sext(io.inst(31).asUInt(), 21), io.inst(31), io.inst(19, 12), io.inst(20), io.inst(30, 21), 0.U(1.W))
-  immB := Cat(sext(io.inst(31).asUInt(), 13), io.inst(31), io.inst(7), io.inst(30, 25), io.inst(11, 8), 0.U(1.W))
+  immJ := Cat(sext(io.inst(31).asUInt, 21), io.inst(31), io.inst(19, 12), io.inst(20), io.inst(30, 21), 0.U(1.W))
+  immB := Cat(sext(io.inst(31).asUInt, 13), io.inst(31), io.inst(7), io.inst(30, 25), io.inst(11, 8), 0.U(1.W))
   io.imm := Mux1H(
     Seq(
       type_I -> immI,

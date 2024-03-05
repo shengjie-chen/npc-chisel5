@@ -22,7 +22,7 @@ class IDregInIO extends PipelineInIO with IDregSignal {}
 //  })
 //}
 
-class IDreg extends MultiIOModule with RVNoobConfig {
+class IDreg extends Module with RVNoobConfig {
   val in  = IO(Input(new IDregInIO))
   val out = IO(Output(new IDregOutIO))
   if (!tapeout) {
@@ -33,7 +33,7 @@ class IDreg extends MultiIOModule with RVNoobConfig {
   out.pc   := RegEnable(in.pc, 0.U, in.reg_en)
   out.snpc := RegEnable(in.snpc, 0.U, in.reg_en)
 
-  val reg_en_t = RegNext(in.reg_en.asBool(), 0.B)
+  val reg_en_t = RegNext(in.reg_en.asBool, 0.B)
   val inst_t   = RegNext(out.inst, 0.U)
   out.inst := Mux(reg_en_t, in.inst, inst_t)
 

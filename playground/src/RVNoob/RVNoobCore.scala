@@ -124,8 +124,8 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   // ********************************** Connect and Logic **********************************
   // >>>>>>>>>>>>>> IF inst Fetch <<<<<<<<<<<<<<
   icache.io.addr        <> pc
-  icache.io.ren         <> !reset.asBool()
-  icache.io.in_valid    <> (pc_valid || (RegNext(reset.asBool(), 1.B) && !reset.asBool()))
+  icache.io.ren         <> !reset.asBool
+  icache.io.in_valid    <> (pc_valid || (RegNext(reset.asBool, 1.B) && !reset.asBool))
   icache.io.inpmem_stop <> RegNext(id_snpc_en && !ex_dnpc_en && !mem_dnpc_en && icache.io.miss, 0.B)
   if (fpga) {
     icache.io.bram.get <> io.i_bram.get
@@ -142,7 +142,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   btb.io.addr   <> pc
   btb.io.update <> br_update.io.btb_update
 
-  ras.reset   <> (br_update.io.ras_pop_reset || reset.asBool())
+  ras.reset   <> (br_update.io.ras_pop_reset || reset.asBool)
   ras.io.push <> br_update.io.ras_push
   val btb_hit_ret = pc_valid && btb.io.br_type === br_type_id("return").U && btb.io.hit
   ras.io.pop.ready := btb_hit_ret || br_update.io.ras_pop_valid
@@ -171,9 +171,9 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   pc_reset := ppl_ctrl.io.pc_reset
 
   if (tapeout) {
-    pc := Mux(pc_reset || reset.asBool(), 0x30000000L.U(addr_w.W), Mux(pc_en, npc, pc))
+    pc := Mux(pc_reset || reset.asBool, 0x30000000L.U(addr_w.W), Mux(pc_en, npc, pc))
   } else {
-    pc := Mux(pc_reset || reset.asBool(), 0x80000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
+    pc := Mux(pc_reset || reset.asBool, 0x80000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
   }
   npc      := Mux(pre_dnpc_en, pre_dnpc, npc_t)
   pre_dnpc := Mux(ret_en, ras.io.pop.bits, btb.io.bta)
@@ -191,7 +191,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   id_reg.in.snpc           <> snpc
   id_reg.in.reg_en         <> ppl_ctrl.io.id_reg_ctrl.en
   id_reg.in.valid          <> (icache.io.out_rvalid || !pc_reset)
-  id_reg.reset             <> (ppl_ctrl.io.id_reg_ctrl.flush || reset.asBool())
+  id_reg.reset             <> (ppl_ctrl.io.id_reg_ctrl.flush || reset.asBool)
   id_reg.in.br_pre.taken   <> pre_dnpc_en
   id_reg.in.br_pre.target  <> Mux(pre_dnpc_en, pre_dnpc, snpc)
   id_reg.in.br_pre.br_type <> Mux(btb.io.hit, btb.io.br_type, br_type_id("not_br").U)
@@ -237,7 +237,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   ex_reg.in.dnpc_ctrl       <> idu.io.dnpc_ctrl
   ex_reg.in.reg_en          <> ppl_ctrl.io.ex_reg_ctrl.en
   ex_reg.in.valid           <> id_reg.out.inst_valid
-  ex_reg.reset              <> (ppl_ctrl.io.ex_reg_ctrl.flush || reset.asBool())
+  ex_reg.reset              <> (ppl_ctrl.io.ex_reg_ctrl.flush || reset.asBool)
   ex_reg.in.br_pre          <> id_reg.out.br_pre
   ex_reg.in.br_info.br_type <> idu.io.gold_br_type
   ex_reg.in.br_info.taken   <> DontCare
@@ -283,7 +283,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   mem_reg.in.wb_csr_ctrl     <> ex_reg.out.wb_csr_ctrl
   mem_reg.in.reg_en          <> ppl_ctrl.io.mem_reg_ctrl.en
   mem_reg.in.valid           <> ex_reg.out.inst_valid
-  mem_reg.reset              <> (ppl_ctrl.io.mem_reg_ctrl.flush || reset.asBool())
+  mem_reg.reset              <> (ppl_ctrl.io.mem_reg_ctrl.flush || reset.asBool)
   mem_reg.in.br_pre          <> ex_reg.out.br_pre
   mem_reg.in.br_info.taken   <> ex_reg.out.dnpc_ctrl.pc_mux
   mem_reg.in.br_info.target  <> Mux(
@@ -397,7 +397,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   wb_reg.in.wb_csr_ctrl <> mem_reg.out.wb_csr_ctrl
   wb_reg.in.reg_en      <> ppl_ctrl.io.wb_reg_ctrl.en
   wb_reg.in.valid       <> mem_reg.out.inst_valid
-  wb_reg.reset          <> (ppl_ctrl.io.wb_reg_ctrl.flush || reset.asBool())
+  wb_reg.reset          <> (ppl_ctrl.io.wb_reg_ctrl.flush || reset.asBool)
 
   judge_load.io.judge_load_op <> wb_reg.out.mem_ctrl.judge_load_op
   judge_load.io.mem_data      <> wb_reg.out.mem_data
@@ -420,7 +420,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
 
     // >>>>>>>>>>>>>> ipc <<<<<<<<<<<<<<
     val inst_cnt = RegInit(0.U(xlen.W))
-    inst_cnt        := inst_cnt + wb_reg.out.inst_valid.asUInt()
+    inst_cnt        := inst_cnt + wb_reg.out.inst_valid.asUInt
     io.inst_cnt.get := inst_cnt
 
     // >>>>>>>>>>>>>> Difftest <<<<<<<<<<<<<<
@@ -507,14 +507,6 @@ object RVNoobCore {
 
     core
   }
-}
-
-object RVNoobCoreGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/soc"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RVNoobCore))
-    )
 }
 
 class DpiNpc extends BlackBox with HasBlackBoxInline {

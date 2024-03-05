@@ -44,7 +44,7 @@
 ////  dontTouch(tag_arrays)
 ////  dontTouch(data_arrays)
 //
-//  //  when(reset.asBool()){
+//  //  when(reset.asBool){
 //  //    for (i <- 0 to ways)
 //  //
 //  //  }
@@ -66,7 +66,7 @@
 //  io.rdata := RegNext(data_arrays(hit_way)(inst_addr_index)(inst_addr_wordoffset))
 //
 //  val miss = Wire(Bool())
-//  miss    := hit.asUInt() === 0.U && io.ren
+//  miss    := hit.asUInt === 0.U && io.ren
 //  io.miss := miss
 //  val miss_delay_cnt = RegInit(0.U(log2Ceil(missDelay).W))
 //  when(miss) {
@@ -95,7 +95,7 @@
 ////  val replace_way = Reg(Vec(sets, UInt(waysWidth.W)))
 ////  val replace_way     = RegInit(VecInit(Seq.fill(sets)(0.U(waysWidth.W))))
 //  val replace_way = RegInit(VecInit(Seq.fill(sets)(0.U(waysWidth.W))))
-////  when(reset.asBool()) {
+////  when(reset.asBool) {
 ////    for (i <- 0 until sets) {
 ////      replace_way(i) := 0.U
 ////    }
@@ -118,7 +118,7 @@
 //}
 //
 //object ICacheOldGen extends App {
-//  (new chisel3.stage.ChiselStage)
+//  (new circt.stage.ChiselStage)
 //    .execute(
 //      Array("--target-dir", "./build/test"),
 //      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new ICacheOld()))

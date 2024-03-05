@@ -133,7 +133,7 @@ class RVNoob extends Module with ext_function with RVNoobConfig {
   }
   // >>>>>>>>>>>>>> SAXI <<<<<<<<<<<<<<
   axi_pmem.io.S_AXI_ACLK    <> clock
-  axi_pmem.io.S_AXI_ARESETN <> !reset.asBool()
+  axi_pmem.io.S_AXI_ARESETN <> !reset.asBool
   axi_pmem.io.S_AXI_AWVALID <> core.io.master.awvalid
   axi_pmem.io.S_AXI_AWREADY <> core.io.master.awready
   axi_pmem.io.S_AXI_AWID    <> core.io.master.awid
@@ -168,7 +168,4 @@ class RVNoob extends Module with ext_function with RVNoobConfig {
 
 }
 
-object RVNoobGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(args, Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RVNoob())))
-}
+

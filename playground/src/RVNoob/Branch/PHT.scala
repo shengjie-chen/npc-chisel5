@@ -51,10 +51,4 @@ class PHTs extends Module with RVNoobConfig {
 
 }
 
-object PHTsGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new PHTs()))
-    )
-}
+

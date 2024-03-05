@@ -28,7 +28,7 @@ class MEMregInIO extends PipelineInIO with MEMregSignal {
   val inst = UInt(inst_w.W)
 }
 
-class MEMreg extends MultiIOModule with RVNoobConfig {
+class MEMreg extends Module with RVNoobConfig {
   val in  = IO(Input(new MEMregInIO))
   val out = IO(Output(new MEMregOutIO))
 

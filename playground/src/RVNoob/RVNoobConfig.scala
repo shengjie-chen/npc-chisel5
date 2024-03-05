@@ -151,14 +151,14 @@ trait ext_function {
   // 返回扩展出来的部分
   //sext(io.inst(31, 20), 12) 代表inst信号的部分中31bit为符号位，返回52bit(64-12)的全0或全1
   def sext(inst_p: UInt, valid_bit: Int, left_shift: Int = 0): UInt =
-    VecInit(Seq.fill(64 - valid_bit - left_shift)(inst_p(inst_p.getWidth - 1))).asUInt()
+    VecInit(Seq.fill(64 - valid_bit - left_shift)(inst_p(inst_p.getWidth - 1))).asUInt
 
   def uext_64(inst_p: UInt): UInt = {
     Cat(uext(inst_p, inst_p.getWidth), inst_p)
   }
 
   def uext(inst_p: UInt, valid_bit: Int, left_shift: Int = 0): UInt =
-    VecInit(Seq.fill(64 - valid_bit - left_shift)(0.B)).asUInt()
+    VecInit(Seq.fill(64 - valid_bit - left_shift)(0.B)).asUInt
 }
 
 trait util_function {

@@ -30,10 +30,10 @@ class ShiftDivider extends Module with RVNoobConfig {
   val sub_in1          = Wire(UInt(65.W))
   val sub_in2          = Wire(UInt(65.W))
 
-  neg_divisor  := (~io.divisor).asUInt() + 1.U
-  neg_dividend := (~io.dividend).asUInt() + 1.U
-  sub_in1      := Mux(io.divw, result(63, 31).asUInt(), result(127, 63).asUInt())
-  sub_in2      := (~(0.B ## divisor)).asUInt() + 1.U
+  neg_divisor  := (~io.divisor).asUInt + 1.U
+  neg_dividend := (~io.dividend).asUInt + 1.U
+  sub_in1      := Mux(io.divw, result(63, 31).asUInt, result(127, 63).asUInt)
+  sub_in2      := (~(0.B ## divisor)).asUInt + 1.U
   sub_res      := sub_in1 + sub_in2
 
   when(io.flush) {
@@ -95,23 +95,16 @@ class ShiftDivider extends Module with RVNoobConfig {
   io.out_valid := !diving_state && RegNext(diving_state, 0.B)
   io.quotient := Mux(
     io.divw,
-    Mux(quotient_signed, (~result(31, 0)).asUInt() + 1.U, result(31, 0)),
-    Mux(quotient_signed, (~result(63, 0)).asUInt() + 1.U, result(63, 0))
+    Mux(quotient_signed, (~result(31, 0)).asUInt + 1.U, result(31, 0)),
+    Mux(quotient_signed, (~result(63, 0)).asUInt + 1.U, result(63, 0))
   )
   io.remainder := Mux(
     io.divw,
-    Mux(remainder_signed, (~result(63, 32)).asUInt() + 1.U, result(63, 32)),
-    Mux(remainder_signed, (~result(127, 64)).asUInt() + 1.U, result(127, 64))
+    Mux(remainder_signed, (~result(63, 32)).asUInt + 1.U, result(63, 32)),
+    Mux(remainder_signed, (~result(127, 64)).asUInt + 1.U, result(127, 64))
   )
 
   override def desiredName = if (tapeout) ysyxid + "_" + getClassName else getClassName
 
 }
 
-object ShiftDividerGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new ShiftDivider()))
-    )
-}

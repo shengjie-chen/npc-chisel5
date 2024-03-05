@@ -30,7 +30,7 @@ class EXregInIO extends PipelineInIO with EXregSignal {}
 
 class EXregOutIO extends PipelineOutIO with EXregSignal {}
 
-class EXreg extends MultiIOModule with RVNoobConfig {
+class EXreg extends Module with RVNoobConfig {
   val in  = IO(Input(new EXregInIO))
   val out = IO(Output(new EXregOutIO))
   if (!tapeout) {

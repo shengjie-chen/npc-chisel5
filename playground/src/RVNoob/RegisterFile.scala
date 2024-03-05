@@ -72,6 +72,6 @@ class RegisterFile(
 }
 
 object RegisterFileGen extends App {
-  (new chisel3.stage.ChiselStage)
+  (new circt.stage.ChiselStage)
     .execute(args, Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new RegisterFile())))
 }

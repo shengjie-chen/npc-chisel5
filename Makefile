@@ -1,6 +1,6 @@
 BUILD_DIR = ./build
 
-export PATH := $(PATH):$(abspath ./utils)
+#export PATH := $(PATH):$(abspath ./utils)
 export NPC_HOME := $(abspath .)
 
 # design module AluFourBit LFSRegister Multiplexer PriorEncoder KeyBoard VgaOutput CharacterInput
@@ -86,16 +86,22 @@ split_verilog: $(SOURCES)
 	done
 
 # use /home/jiexxpu/ysyx/ysyx-workbench/ysyxSoC/ysyx/test
+SOC_DIR = $(NPC_HOME)/build/soc
 tapeout:
-	rm -rf /home/jiexxpu/ysyx/ysyx-workbench/npc/build/soc
+	rm -rf $(SOC_DIR)
 	sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(SRC_CODE_DIR)/RVNoobConfig.scala
 	sed -i 's/\(val tapeout: *Boolean = \)false/\1true/g' $(SRC_CODE_DIR)/RVNoobConfig.scala
-	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
-	sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/^\/\//d;/`ifndef/,/`endif/d' /home/jiexxpu/ysyx/ysyx-workbench/npc/build/soc/ysyx_22040495.v
+	./mill -i __.test.runMain RVNoob.RVNoobCoreGen
+	sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/^\/\//d;/`ifndef/,/`endif/d;/`endif/d' $(SOC_DIR)/ysyx_22040495.v
 	#make split_tapeout
 
+delete_anno:
+	sed -i '/initial begin/,/end /d' $(SOC_DIR)/ysyx_22040495.v
+	sed -i '/`ifdef/,/`endif/d' $(SOC_DIR)/ysyx_22040495.v
+	sed -i '/`ifdef/,/`endif/d' $(SOC_DIR)/ysyx_22040495.v
+
 split_tapeout:
-	python3 split_modules.py /home/jiexxpu/ysyx/ysyx-workbench/npc/build/soc/ysyx_22040495.v
+	python3 split_modules.py $(SOC_DIR)/ysyx_22040495.v
 
 verilog: update_config_spmu
 	$(call git_commit, "generate $(TOPNAME) verilog")
@@ -105,7 +111,9 @@ verilog: update_config_spmu
 	mkdir -p $(VERILOG_OBJ_DIR)
 	./mill -i __.test.runMain $(PACKAGE).$(TOPMODULE_GEN) -td $(VERILOG_OBJ_DIR)
 #	sed -i 's/val tapeout: Boolean = false/val tapeout: Boolean = true/g' $(SRC_CODE_DIR)/RVNoobConfig.scala
-	sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/^\/\//d;/`ifndef/,/`endif/d' $(VERILOG_OBJ_DIR)/$(TOPNAME).v
+	sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/^\/\//d;/`ifndef/,/`endif/d;/`endif/d' $(VERILOG_OBJ_DIR)/$(TOPNAME).v
+	sed -i '/^\w*\.v$$/D' $(VERILOG_OBJ_DIR)/$(TOPNAME).v
+	sed -i '/^$$/N;/^\n$$/D' $(VERILOG_OBJ_DIR)/$(TOPNAME).v
 # 	make split_verilog
 
 # before run, make verilog
@@ -126,7 +134,7 @@ IMG=../am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin
 # sdb itrace mtrace ftrace
 SDB=sdb_n  # 跳过sdb则改为sdb_n, 否则是sdb_y
 ARGS=$(SDB) elf=$(basename $(IMG)).elf diff=../nemu/build/riscv64-nemu-interpreter-so
-DISASM_CXXSRC = ./playground/src/RVnpc/RVNoob/disasm.cc
+DISASM_CXXSRC = $(SRC_CODE_DIR)/disasm.cc
 DISASM_CXXFLAGS = $(shell llvm-config --cxxflags) -fPIE
 DISASM_LIBS = $(shell llvm-config --libs) -O3 -fsanitize=address -pie -ldl -lSDL2
 VERILAOTR_CXXFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -O3

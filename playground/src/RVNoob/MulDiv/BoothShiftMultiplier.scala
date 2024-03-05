@@ -43,7 +43,7 @@ class BoothShiftMultiplier extends Module with RVNoobConfig {
       multiplicand := Fill(
         64,
         io.multiplicand.head(1)
-      ) ## io.multiplicand // VecInit(Seq.fill(64)(io.multiplicand.head(1))).asUInt() ## io.multiplicand
+      ) ## io.multiplicand // VecInit(Seq.fill(64)(io.multiplicand.head(1))).asUInt ## io.multiplicand
     }.elsewhen(io.mul_signed === 3.U) {
       multiplier   := Fill(2, io.multiplier.head(1)) ## io.multiplier ## 0.B
       multiplicand := Fill(64, io.multiplicand.head(1)) ## io.multiplicand
@@ -77,10 +77,4 @@ class BoothShiftMultiplier extends Module with RVNoobConfig {
 
 }
 
-object BoothShiftMultiplierGen extends App {
-  (new chisel3.stage.ChiselStage)
-    .execute(
-      Array("--target-dir", "./build/test"),
-      Seq(chisel3.stage.ChiselGeneratorAnnotation(() => new BoothShiftMultiplier()))
-    )
-}
+

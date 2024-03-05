@@ -14,7 +14,7 @@ class DATAM extends Module with RVNoobConfig {
     val mem_ctrl  = Input(new MemCtrlIO)
   })
 
-  val daddr = io.data_addr & (~0x7.U(64.W)).asUInt()
+  val daddr = io.data_addr & (~0x7.U(64.W)).asUInt
   val shift = Wire(UInt(3.W))
   val rdata = Wire(UInt(xlen.W))
   val wdata = Wire(UInt(xlen.W))
