@@ -6,13 +6,14 @@
  * @FilePath: /npc/playground/src/RVnpc/RVNoob/difftest.c
  * @Description: difftest相关的变量与函数
  */
-#include "RVNoob.h"
 #include "VRVNoobSim.h"
+#include "utils/difftest.h"
 #include "common.h"
 #include "dlfcn.h"
+#include "memory/memory.h"
 
 extern CPU_state cpu_state;
-extern NPCState npc_state;
+// extern NPCState npc_state;
 extern uint64_t *cpu_gpr;
 extern uint64_t *cpu_csr;
 extern VRVNoobSim *top;
@@ -79,7 +80,7 @@ void init_difftest(char *ref_so_file, long img_size, int port, void *cpu) {
 }
 
 extern vluint64_t main_time;
-bool isa_difftest_checkregs(CPU_state *ref_r) {
+static bool isa_difftest_checkregs(CPU_state *ref_r) {
     for (int i = 0; i < 32; i++) {
         if (cpu_state.gpr[i] != ref_r->gpr[i]) {
             printf("!!!!!!!\n");
@@ -111,7 +112,7 @@ bool isa_difftest_checkregs(CPU_state *ref_r) {
     return true;
 }
 
-void isa_reg_display(CPU_state *ref) {
+static void isa_reg_display(CPU_state *ref) {
     printf("cpu.pc is " FMT_WORD "\n", cpu_state.pc);
     printf("ref.pc is " FMT_WORD "\n", ref->pc);
     int i;
@@ -128,7 +129,7 @@ void isa_reg_display(CPU_state *ref) {
 /// @brief
 /// @param ref
 /// @param pc 上一周期wb的pc，也就是当前检测pc
-void checkregs(CPU_state *ref, vaddr_t pc) {
+static void checkregs(CPU_state *ref, vaddr_t pc) {
     if (!isa_difftest_checkregs(ref)) {
         npc_state.state = NPC_ABORT;
         npc_state.halt_pc = pc;

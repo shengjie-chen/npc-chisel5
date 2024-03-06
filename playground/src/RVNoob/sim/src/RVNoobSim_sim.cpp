@@ -15,18 +15,17 @@
 #include "verilated_vcd_c.h"
 #include <sys/time.h>
 
-#include "RVNoob.h"
-#include "device.c"
-#include "difftest.c"
-#include "sdb.c"
-#include "timer.c"
-#include "trace.c"
-#include "useddpi.c"
+#include "common.h"
+#include "device/device.h"
+#include "utils/difftest.h"
+#include "memory/memory.h"
+#include "trace/trace.h"
+#include "utils/cpudpi.h"
+#include "utils/spmu.h"
+#include "utils/sdb.h"
 
 extern "C" void init_disasm(const char *triple);
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-// extern "C" void flash_read(uint32_t addr, uint32_t *data) { assert(0); }
-// extern "C" void mrom_read(uint32_t addr, uint32_t *data) { assert(0); }
 
 vluint64_t main_time = 0;                 // 当前仿真时间
 const vluint64_t sim_time = SIM_TIME_MAX; // 最高仿真时间 可选：100
@@ -38,13 +37,6 @@ vaddr_t trace_pc = 0x80000000;
 
 #ifdef CONFIG_MTRACE
 extern FILE *mtrace_fp;
-#endif
-
-#ifdef CONFIG_ITRACE
-#define ITRACE_PATH NPC_HOME "/build/RVNoob/npc-itrace-log.txt"
-char logbuf[128];
-FILE *itrace_fp;
-const char *itrace_file = ITRACE_PATH;
 #endif
 
 VRVNoobSim *top = new VRVNoobSim;

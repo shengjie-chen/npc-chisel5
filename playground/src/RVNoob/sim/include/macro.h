@@ -88,30 +88,36 @@
 #define unlikely(cond) __builtin_expect(cond, 0)
 #endif
 
-// for AM IOE
-#define io_read(reg)                                                                                                   \
-    ({                                                                                                                 \
-        reg##_T __io_param;                                                                                            \
-        ioe_read(reg, &__io_param);                                                                                    \
-        __io_param;                                                                                                    \
-    })
+#define ANSI_FG_BLACK "\33[1;30m"
+#define ANSI_FG_RED "\33[1;31m"
+#define ANSI_FG_GREEN "\33[1;32m"
+#define ANSI_FG_YELLOW "\33[1;33m"
+#define ANSI_FG_BLUE "\33[1;34m"
+#define ANSI_FG_MAGENTA "\33[1;35m"
+#define ANSI_FG_CYAN "\33[1;36m"
+#define ANSI_FG_WHITE "\33[1;37m"
+#define ANSI_BG_BLACK "\33[1;40m"
+#define ANSI_BG_RED "\33[1;41m"
+#define ANSI_BG_GREEN "\33[1;42m"
+#define ANSI_BG_YELLOW "\33[1;43m"
+#define ANSI_BG_BLUE "\33[1;44m"
+#define ANSI_BG_MAGENTA "\33[1;35m"
+#define ANSI_BG_CYAN "\33[1;46m"
+#define ANSI_BG_WHITE "\33[1;47m"
+#define ANSI_NONE "\33[0m"
+#define ANSI_FMT(str, fmt) fmt str ANSI_NONE
 
-#define io_write(reg, ...)                                                                                             \
-    ({                                                                                                                 \
-        reg##_T __io_param = (reg##_T){__VA_ARGS__};                                                                   \
-        ioe_write(reg, &__io_param);                                                                                   \
-    })
+//#define Assert(cond, format, ...) \
+//  do { \
+//    if (!(cond)) { \
+//      MUXDEF(CONFIG_TARGET_AM, printf(ANSI_FMT(format, ANSI_FG_RED) "\n", ## __VA_ARGS__), \
+//        (fflush(stdout), fprintf(stderr, ANSI_FMT(format, ANSI_FG_RED) "\n", ##  __VA_ARGS__))); \
+//      assert(cond); \
+//    } \
+//  } while (0)
 
-#define DEVICE_BASE 0xa0000000
-#define MMIO_BASE 0xa0000000
-
-#define SERIAL_PORT (DEVICE_BASE + 0x00003f8)
-#define KBD_ADDR (DEVICE_BASE + 0x0000060)
-#define RTC_ADDR (DEVICE_BASE + 0x0000048)
-#define VGACTL_ADDR (DEVICE_BASE + 0x0000100)
-#define AUDIO_ADDR (DEVICE_BASE + 0x0000200)
-#define DISK_ADDR (DEVICE_BASE + 0x0000300)
-#define FB_ADDR (MMIO_BASE + 0x1000000)
-#define AUDIO_SBUF_ADDR (MMIO_BASE + 0x1200000)
+#define panic(format, ...)                                                                                             \
+    printf(format);                                                                                                    \
+    exit(0);
 
 #endif

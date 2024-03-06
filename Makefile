@@ -31,6 +31,8 @@ ifeq ($(PRJNAME), ysyxSoCFull)
 VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
 endif
 CSRCS_SIM = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME)_sim.cpp")
+CSRCS_SIM += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.c")
+# CSRCS_SIM += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.h")
 RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
 
 # rules for verilator
@@ -133,11 +135,11 @@ IMG=../am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin
 # sdb itrace mtrace ftrace
 SDB=sdb_n  # 跳过sdb则改为sdb_n, 否则是sdb_y
 ARGS=$(SDB) elf=$(basename $(IMG)).elf diff=../nemu/build/riscv64-nemu-interpreter-so
-DISASM_CXXSRC = $(SRC_CODE_DIR)/sim/disasm.cc
+DISASM_CXXSRC = $(SRC_CODE_DIR)/sim/src/trace/disasm.cc
 DISASM_CXXFLAGS = $(shell llvm-config --cxxflags) -fPIE
-DISASM_LIBS = $(shell llvm-config --libs) -O3 -pie -ldl -lSDL2
-DISASM_LIBS += -fsanitize=address 
-VERILAOTR_CXXFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -O3
+VERILAOTR_LDFLAGS = $(shell llvm-config --libs) -O3 -pie -ldl -lSDL2
+VERILAOTR_LDFLAGS += -fsanitize=address 
+VERILAOTR_CFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -O3 -I$(SRC_CODE_DIR)/sim/include
 sim_npc_vcd: verilog
 	$(call git_commit, "sim $(TOPNAME) RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Write this Makefile by yourself."
@@ -146,7 +148,7 @@ sim_npc_vcd: verilog
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
 		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE)
 
@@ -158,7 +160,7 @@ sim_npc_vcd_without_gtk: verilog
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) \
 		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 
 sim_npc_vcd_without_regen:
@@ -168,7 +170,7 @@ sim_npc_vcd_without_regen:
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator -$(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
 		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE)
 
@@ -180,7 +182,7 @@ sim_npc_vcd_without_regen_gtk:
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) \
 		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 
 gtk:
@@ -189,7 +191,8 @@ gtk:
 perf_sim_npc_nanoslite_pal:
 	make split_verilog
 	mkdir -p $(OBJ_DIR)
-	verilator --prof-cfuncs --top $(TOPNAME) -O3 --cc $(VSRCS) --Mdir $(OBJ_DIR) --exe --build $(CSRCS_SIM) -o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	verilator --prof-cfuncs --top $(TOPNAME) -O3 --cc $(VSRCS) --Mdir $(OBJ_DIR) --exe --build $(CSRCS_SIM) -o $(abspath $(SIM_BIN)) \
+		$(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	# $(SIM_BIN) $(IMG)
 	$(SIM_BIN) /home/jiexxpu/ysyx/ysyx-workbench/nanos-lite/build/nanos-lite-riscv64-npc.bin
 	gprof $(SIM_BIN) gmon.out > gprof.out
@@ -204,7 +207,7 @@ perf_sim_npc_nanoslite_pal:
 # 	@echo "Write this Makefile by yourself."
 # 	mkdir -p $(OBJ_DIR)
 # 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
-# 	verilator --cc $(VSRCS) $(TRACE_FORMAT) --exe --build --gdb $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) -o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  
+# 	verilator --cc $(VSRCS) $(TRACE_FORMAT) --exe --build --gdb $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) -o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  
 # 	gdb $(abspath $(SIM_BIN)) --args $(IMG) $(ARGS)
 # 	gtkwave $(WAVE_FILE)
 #$(abspath $(OBJ_DIR)/disasm.o)

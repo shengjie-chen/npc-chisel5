@@ -1,3 +1,4 @@
+#include "trace/trace.h"
 #include "common.h"
 #include <elf.h>
 
@@ -9,9 +10,19 @@ FILE *mtrace_fp = NULL;
 
 #ifdef CONFIG_FTRACE
 #define FTRACE_PATH NPC_HOME "/build/RVNoob/npc-ftrace-log.txt"
-char *elf_file = NULL;
-FILE *ftrace_fp = NULL;
 const char *ftrace_file = FTRACE_PATH;
+FILE *ftrace_fp = NULL;
+char *elf_file = NULL;
+#endif
+
+#ifdef CONFIG_ITRACE
+#define ITRACE_PATH NPC_HOME "/build/RVNoob/npc-itrace-log.txt"
+char logbuf[128];
+FILE *itrace_fp;
+const char *itrace_file = ITRACE_PATH;
+#endif
+
+#ifdef CONFIG_FTRACE
 int ftrace_depth = 0;
 int ftrace_func_num;
 #define MAX_FUNC_NUM 100
@@ -149,7 +160,7 @@ void init_ftrace(const char *elf_file) {
     free(symtab);
 }
 
-bool is_call(uint32_t cpu_inst) {
+static bool is_call(uint32_t cpu_inst) {
     uint32_t opcode = cpu_inst & 0b1111111;
     if (opcode == 0b1101111 || ((opcode == 0b1100111) && (((cpu_inst >> 12) & 0b111) == 0))) {
         if (((cpu_inst >> 7) & 0b11111) == 1) {
@@ -159,7 +170,7 @@ bool is_call(uint32_t cpu_inst) {
     return false;
 }
 
-bool is_jr(uint32_t cpu_inst) {
+static bool is_jr(uint32_t cpu_inst) {
     uint32_t opcode = cpu_inst & 0b1111111;
     if (opcode == 0b1100111) {
         if (((cpu_inst >> 12) & 0b111) == 0) {

@@ -1,9 +1,11 @@
-#include "RVNoob.h"
 #include "common.h"
-#include "timer.c"
+#include "device/device.h"
 #include <SDL2/SDL.h>
 
-extern NPCState npc_state;
+// extern NPCState npc_state;
+
+uint64_t get_time();
+uint64_t get_time_internal();
 
 #define TIMER_HZ 2
 

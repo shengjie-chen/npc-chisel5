@@ -1,6 +1,6 @@
 #ifndef __TIMER_C__
 #define __TIMER_C__
-#include <sys/time.h>
+#include "common.h"
 
 static uint64_t boot_time = 0;
 

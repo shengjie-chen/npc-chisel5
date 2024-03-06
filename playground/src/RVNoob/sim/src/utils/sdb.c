@@ -1,15 +1,12 @@
-#include "macro.h"
+#include "utils/sdb.h"
+#include "common.h"
 #include "verilated.h"
-#include "verilated_dpi.h"
 #include "verilated_vcd_c.h"
-#include <iostream>
 #include <stddef.h>
-#include <string>
-using namespace std;
+
 extern void one_clock();
-extern NPCState npc_state;
 extern vluint64_t main_time;
-extern const vluint64_t sim_time;
+extern const vluint64_t sim_time = SIM_TIME_MAX;
 
 /// @brief gpr寄存器向量(数组)的指针
 uint64_t *cpu_gpr = NULL;
@@ -32,7 +29,7 @@ void dump_gpr() {
 
 char line_read[20] = {0};
 char *rl_gets() {
-    cin.getline(line_read, 20);
+    std::cin.getline(line_read, 20);
 
     return line_read;
 }
