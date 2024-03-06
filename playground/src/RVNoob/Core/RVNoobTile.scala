@@ -131,6 +131,8 @@ class RVNoobTile extends Module with ext_function with RVNoobConfig {
 
   io.axi_pc.get <> core.io.axi_pc.get
 
+  override def desiredName = if (soc_sim) ysyxid else getClassName
+
 }
 
 object RVNoobTile {

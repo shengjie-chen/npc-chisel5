@@ -25,6 +25,8 @@
 
 extern "C" void init_disasm(const char *triple);
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+// extern "C" void flash_read(uint32_t addr, uint32_t *data) { assert(0); }
+// extern "C" void mrom_read(uint32_t addr, uint32_t *data) { assert(0); }
 
 vluint64_t main_time = 0;                 // 当前仿真时间
 const vluint64_t sim_time = SIM_TIME_MAX; // 最高仿真时间 可选：100
@@ -42,15 +44,17 @@ extern FILE *mtrace_fp;
 #define ITRACE_PATH NPC_HOME "/build/RVNoob/npc-itrace-log.txt"
 char logbuf[128];
 FILE *itrace_fp;
-char *itrace_file = ITRACE_PATH;
+const char *itrace_file = ITRACE_PATH;
 #endif
 
 VRVNoobSim *top = new VRVNoobSim;
 #ifdef CONFIG_DUMPWAVE
 #ifdef CONFIG_FSTWAVE
 VerilatedFstC *tfp = new VerilatedFstC;
+#define WAVE_FILE NPC_HOME "/build/RVNoob/RVNoobSim.fst"
 #else
 VerilatedVcdC *tfp = new VerilatedVcdC;
+#define WAVE_FILE NPC_HOME "/build/RVNoob/RVNoobSim.vcd"
 #endif
 #endif
 
@@ -144,11 +148,7 @@ int main(int argc, char **argv, char **env) {
     Verilated::traceEverOn(true);
 #ifdef CONFIG_DUMPWAVE
     top->trace(tfp, 99);
-#ifdef CONFIG_FSTWAVE
-    tfp->open("./build/RVNoob/RVNoob.fst");
-#else
-    tfp->open("./build/RVNoob/RVNoob.vcd");
-#endif
+    tfp->open(WAVE_FILE);
 #endif
     clock_t start, end;
     start = clock();

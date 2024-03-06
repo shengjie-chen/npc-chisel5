@@ -252,15 +252,11 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   )
   npc_add_res := ex_reg.out.imm(addr_w - 1, 0) +
     Mux(ex_reg.out.dnpc_ctrl.dnpc_jalr, exe.io.src1(addr_w - 1, 0), ex_reg.out.pc)
-  exe_src1_forward := MuxLookup(
-    ppl_ctrl.io.forward1,
-    ex_reg.out.src1,
-    Array(1.U -> wb_forward_data, 2.U -> mem_forward_data)
+  exe_src1_forward := MuxLookup(ppl_ctrl.io.forward1, ex_reg.out.src1)(
+    Seq(1.U -> wb_forward_data, 2.U -> mem_forward_data)
   )
-  exe_src2_forward := MuxLookup(
-    ppl_ctrl.io.forward2,
-    ex_reg.out.src2,
-    Array(1.U -> wb_forward_data, 2.U -> mem_forward_data)
+  exe_src2_forward := MuxLookup(ppl_ctrl.io.forward2, ex_reg.out.src2)(
+    Seq(1.U -> wb_forward_data, 2.U -> mem_forward_data)
   )
 
   // >>>>>>>>>>>>>> MEM mem_reg <<<<<<<<<<<<<<
@@ -468,7 +464,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
     }
   }
 
-  override def desiredName = if (tapeout) ysyxid else getClassName
+  override def desiredName = if (tapeout) ysyxid else if (soc_sim) ysyxid + "_" + getClassName else getClassName
 
 }
 

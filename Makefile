@@ -3,23 +3,37 @@ BUILD_DIR = ./build
 #export PATH := $(PATH):$(abspath ./utils)
 export NPC_HOME := $(abspath .)
 
-# design module: RVNoobSim ysyxSoCFull
+# project module: RVNoobSim ysyxSoCFull
+PRJNAME = RVNoobSim
+ifeq ($(PRJNAME), RVNoobSim)
 TOPNAME = RVNoobSim
-PRJNAME = RVNoob
+else
+TOPNAME = RVNoobTile
+endif
 SRC_DIR = ./playground/src
 # name of object to generate the verilog of design
 TOPMODULE_GEN = $(TOPNAME)Gen
 
-SRC_CODE_DIR = $(shell find $(abspath $(SRC_DIR)) -maxdepth 2 -type d -name $(PRJNAME))
-GEN_DIR = $(subst $(abspath $(SRC_DIR)),$(BUILD_DIR),$(SRC_CODE_DIR))# $(subst FROM, TO, TEXT)，即将字符串TEXT中的子串FROM变为TO
-
+# src dir
+SRC_CODE_DIR = $(shell find $(abspath $(SRC_DIR)) -maxdepth 2 -type d -name RVNoob)
 PACKAGE = $(subst /,.,$(subst $(abspath $(SRC_DIR))/,,$(SRC_CODE_DIR))).Core
 
+# gen dir
+GEN_DIR = $(subst $(abspath $(SRC_DIR)),$(BUILD_DIR),$(SRC_CODE_DIR))# $(subst FROM, TO, TEXT)，即将字符串TEXT中的子串FROM变为TO
 OBJ_DIR = $(GEN_DIR)/obj_dir
-VERILOG_GEN = Verilog_Gen
-VERILOG_OBJ_DIR = $(GEN_DIR)/$(VERILOG_GEN)
-BIN_VCD = $(GEN_DIR)/$(TOPNAME)
+VERILOG_OBJ_DIR = $(GEN_DIR)/Verilog_Gen
+SIM_BIN = $(GEN_DIR)/$(PRJNAME)
 
+# project source
+VSRCS = $(shell find $(abspath $(VERILOG_OBJ_DIR)) -name  "*.v")
+VSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")# add blackbox verilog file
+ifeq ($(PRJNAME), ysyxSoCFull)
+VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
+endif
+CSRCS_SIM = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME)_sim.cpp")
+RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
+
+# rules for verilator
 WAVE_FORMAT ?= FST #(FST, VCD)
 TRACE_FORMAT ?= --trace-fst
 WAVE_FILE ?= $(GEN_DIR)/$(PRJNAME).fst
@@ -28,24 +42,13 @@ ifeq ($(WAVE_FORMAT), VCD)
 	WAVE_FILE ?= $(GEN_DIR)/$(PRJNAME).vcd
 endif
 
-# VERILATOR_CFLAGS += -MMD --build -cc  \
-# 					-O3 --x-assign fast --x-initial fast --noassert
-
+# VERILATOR_CFLAGS += -MMD --build -cc -O3 --x-assign fast --x-initial fast --noassert
 VERILATOR_CFLAGS += -cc --exe --build 
 VERILATOR_CFLAGS += -O3 --timescale "1ns/1ns" --no-timing
-#VERILATOR_CFLAGS += -I$(YSYXSOC_HOME)/perip/uart16550/rtl -I$(YSYXSOC_HOME)/perip/spi/rtl
+ifeq ($(PRJNAME), ysyxSoCFull)
+VERILATOR_CFLAGS += -I$(YSYXSOC_HOME)/perip/uart16550/rtl -I$(YSYXSOC_HOME)/perip/spi/rtl
+endif
 
-# project source
-SSRCS = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.scala")
-SSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")
-VSRCS = $(shell find $(abspath $(VERILOG_OBJ_DIR)) -name  "*.v")
-VSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")# add blackbox verilog file
-#VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
-CSRCS_VCD = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME)_sim.cpp")
-
-RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
-
-# rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 LDFLAGS += -lSDL2 -lSDL2_image
@@ -66,6 +69,24 @@ update_config_spmu:
     		echo "SPMU set to true"; \
     fi
 
+ifeq ($(TOPNAME), RVNoobSim)
+update_config:
+	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+else
+update_config:
+	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+	sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
+endif
+
+# ifeq ($(TOPNAME),a)
+#     # 如果TOPNAME等于"a"，则执行以下指令
+#     update_config:
+# 		sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+# 		sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
+# endif
+	
+
 # 将一个总的verilog拆分到多个verilog子文件
 VPPFILE ?= $(VERILOG_OBJ_DIR)/$(TOPNAME).v
 # SOURCES=$(VERILOG_OBJ_DIR)/$(TOPNAME).v
@@ -84,26 +105,21 @@ tapeout:
 	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
 	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
 
-SOCSIM_DIR = $(NPC_HOME)/build/socsim
 socsim: update_config_spmu
-	rm -rf $(SOCSIM_DIR)
+	rm -rf $(VERILOG_OBJ_DIR)
 	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
-	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
-	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
+	./mill -i __.test.runMain $(PACKAGE).RVNoobTileGen
+	make verilog_post_processing VPPFILE=$(VERILOG_OBJ_DIR)/ysyx_22040495.v
 
-verilog: $(VERILOG_OBJ_DIR)/$(TOPNAME).v
-
-$(VERILOG_OBJ_DIR)/$(TOPNAME).v: update_config_spmu
+verilog: update_config_spmu update_config
 	$(call git_commit, "generate $(TOPNAME) verilog")
 #	echo $(SRC_CODE_DIR)
-	sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
-	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	rm -rf $(VERILOG_OBJ_DIR)
 	mkdir -p $(VERILOG_OBJ_DIR)
 	./mill -i __.test.runMain $(PACKAGE).$(TOPMODULE_GEN) -td $(VERILOG_OBJ_DIR)
 #	sed -i 's/val tapeout: Boolean = false/val tapeout: Boolean = true/g' $(RVNoob_CONFIG)
-	make verilog_post_processing VPPFILE=$@
+	make verilog_post_processing VPPFILE=$(VERILOG_OBJ_DIR)/$(TOPNAME).v
 
 verilog_post_processing:
 	sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/`ifndef/,/`endif/d;/`endif/d' $(VPPFILE)
@@ -129,9 +145,9 @@ sim_npc_vcd: verilog
 	mkdir -p $(OBJ_DIR)
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
-		$(VSRCS) $(CSRCS_VCD) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
-	$(BIN_VCD) $(IMG) $(ARGS)
+		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE)
 
 sim_npc_vcd_without_gtk: verilog
@@ -141,9 +157,9 @@ sim_npc_vcd_without_gtk: verilog
 	mkdir -p $(OBJ_DIR)
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) \
-		$(VSRCS) $(CSRCS_VCD) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
-	$(BIN_VCD) $(IMG) $(ARGS)
+		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	$(SIM_BIN) $(IMG) $(ARGS)
 
 sim_npc_vcd_without_regen:
 	$(call git_commit, "sim $(TOPNAME) RTL") # DO NOT REMOVE THIS LINE!!!
@@ -151,9 +167,9 @@ sim_npc_vcd_without_regen:
 	mkdir -p $(OBJ_DIR)
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator -$(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
-		$(VSRCS) $(CSRCS_VCD) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
-	$(BIN_VCD) $(IMG) $(ARGS)
+		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE)
 
 sim_npc_vcd_without_regen_gtk:
@@ -163,9 +179,9 @@ sim_npc_vcd_without_regen_gtk:
 	mkdir -p $(OBJ_DIR)
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(TOPNAME) --Mdir $(OBJ_DIR) \
-		$(VSRCS) $(CSRCS_VCD) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
-	$(BIN_VCD) $(IMG) $(ARGS)
+		$(VSRCS) $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
+		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	$(SIM_BIN) $(IMG) $(ARGS)
 
 gtk:
 	gtkwave $(WAVE_FILE)
@@ -173,13 +189,13 @@ gtk:
 perf_sim_npc_nanoslite_pal:
 	make split_verilog
 	mkdir -p $(OBJ_DIR)
-	verilator --prof-cfuncs --top $(TOPNAME) -O3 --cc $(VSRCS) --Mdir $(OBJ_DIR) --exe --build $(CSRCS_VCD) -o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
-	# $(BIN_VCD) $(IMG)
-	$(BIN_VCD) /home/jiexxpu/ysyx/ysyx-workbench/nanos-lite/build/nanos-lite-riscv64-npc.bin
-	gprof $(BIN_VCD) gmon.out > gprof.out
+	verilator --prof-cfuncs --top $(TOPNAME) -O3 --cc $(VSRCS) --Mdir $(OBJ_DIR) --exe --build $(CSRCS_SIM) -o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  $(addprefix -CFLAGS ,$(VERILAOTR_CXXFLAGS))
+	# $(SIM_BIN) $(IMG)
+	$(SIM_BIN) /home/jiexxpu/ysyx/ysyx-workbench/nanos-lite/build/nanos-lite-riscv64-npc.bin
+	gprof $(SIM_BIN) gmon.out > gprof.out
 	verilator_profcfunc gprof.out > report.out
 
-#	gprof $(BIN_VCD) gmon.out > gprof.out
+#	gprof $(SIM_BIN) gmon.out > gprof.out
 #	verilator_profcfunc gprof.out > report.out
 # perf record /home/jiexxpu/ysyx/ysyx-workbench/npc/build/RVNoob/RVNoob /home/jiexxpu/ysyx/ysyx-workbench/nanos-lite/build/nanos-lite-riscv64-npc.bin
 
@@ -188,8 +204,8 @@ perf_sim_npc_nanoslite_pal:
 # 	@echo "Write this Makefile by yourself."
 # 	mkdir -p $(OBJ_DIR)
 # 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
-# 	verilator --cc $(VSRCS) $(TRACE_FORMAT) --exe --build --gdb $(CSRCS_VCD) $(abspath $(OBJ_DIR)/disasm.o) -o $(abspath $(BIN_VCD)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  
-# 	gdb $(abspath $(BIN_VCD)) --args $(IMG) $(ARGS)
+# 	verilator --cc $(VSRCS) $(TRACE_FORMAT) --exe --build --gdb $(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) -o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(DISASM_LIBS))  
+# 	gdb $(abspath $(SIM_BIN)) --args $(IMG) $(ARGS)
 # 	gtkwave $(WAVE_FILE)
 #$(abspath $(OBJ_DIR)/disasm.o)
 
@@ -213,7 +229,7 @@ checkformat:
 
 clean:
 	-rm -rf $(BUILD_DIR)
-	rm *.ii *.s *.o *.d
+	-rm *.ii *.s *.o *.d *.json *.v
 
 clean_object:
 	rm -rf $(OBJ_DIR)

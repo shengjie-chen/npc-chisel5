@@ -3,7 +3,7 @@
 
 #ifdef CONFIG_MTRACE
 #define MTRACE_PATH NPC_HOME "/build/RVNoob/npc-mtrace-log.txt"
-char *mtrace_file = MTRACE_PATH;
+const char *mtrace_file = MTRACE_PATH;
 FILE *mtrace_fp = NULL;
 #endif
 
