@@ -9,13 +9,7 @@ import scala.math.pow
 
 class RVNoobTile extends Module with ext_function with RVNoobConfig {
   val io = IO(new Bundle {
-    val pc        = Output(UInt(addr_w.W))
-    val ebreak    = Output(Bool())
-    val diff_en   = Output(Bool())
-    val diff_pc   = Output(UInt(addr_w.W))
-    val diff_inst = Output(UInt(inst_w.W))
-    val axi_pc    = Output(UInt(addr_w.W))
-    val inst_cnt  = Output(UInt(xlen.W))
+    val axi_pc = if (!soc_sim) Some(Output(UInt(addr_w.W))) else None
 
     val interrupt = Input(Bool())
     // >>>>>>>>>>>>>> AXI <<<<<<<<<<<<<<
@@ -135,13 +129,7 @@ class RVNoobTile extends Module with ext_function with RVNoobConfig {
   io.master <> core.io.master
   io.slave  <> core.io.slave
 
-  io.pc        <> core.io.pc.get
-  io.ebreak    <> core.io.ebreak.get
-  io.diff_en   <> core.io.diff_en.get
-  io.diff_pc   <> core.io.diff_pc.get
-  io.diff_inst <> core.io.diff_inst.get
-  io.axi_pc    <> core.io.axi_pc.get
-  io.inst_cnt  <> core.io.inst_cnt.get
+  io.axi_pc.get <> core.io.axi_pc.get
 
 }
 

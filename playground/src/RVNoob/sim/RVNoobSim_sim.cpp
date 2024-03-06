@@ -61,12 +61,12 @@ bool record_flag = 0;
 
 /// @brief 仿真一个时钟周期
 void one_clock() {
-    vaddr_t pc = top->io_pc;
+    vaddr_t pc = cpu_pc;
     top->clock = 0;
-    if (in_pmem(top->io_pc)) {
-        // top->io_inst = pmem_read(top->io_pc, 4);
+    if (in_pmem(cpu_pc)) {
+        // top->io_inst = pmem_read(cpu_pc, 4);
     } else {
-        printf("error happen!! time %ld read inst addr : %x\n", main_time, top->io_pc);
+        printf("error happen!! time %ld read inst addr : %x\n", main_time, cpu_pc);
         // tfp->close();
         // exit(1);
         npc_state.state = NPC_ABORT;
@@ -81,20 +81,20 @@ void one_clock() {
 
 #ifdef CONFIG_FTRACE
     if (main_time > CONFIG_DUMPSTART) {
-        if (top->io_diff_en) {
-            ftrace_call_ret(top->io_diff_inst, trace_pc, top->io_diff_pc);
+        if (diff_en) {
+            ftrace_call_ret(diff_inst, trace_pc, diff_pc);
         }
     }
 #endif
 
 #ifdef CONFIG_ITRACE
     if (main_time > CONFIG_DUMPSTART) {
-        if (top->io_diff_en) {
+        if (diff_en) {
             memset(logbuf, 0, 128);
             char *p = logbuf;
             p += snprintf(p, sizeof(logbuf), "0x%016lx:", trace_pc);
             int i;
-            uint8_t *inst = (uint8_t *)(&top->io_diff_inst);
+            uint8_t *inst = (uint8_t *)(&diff_inst);
             // printf("%x\n", cpu_inst);
             int ilen = 4;
             for (i = ilen - 1; i >= 0; i--) {
@@ -107,15 +107,15 @@ void one_clock() {
             space_len = space_len * 3 + 1;
             memset(p, ' ', space_len);
             p += space_len;
-            disassemble(p, logbuf + sizeof(logbuf) - p, top->io_pc, (uint8_t *)(&top->io_diff_inst), ilen);
+            disassemble(p, logbuf + sizeof(logbuf) - p, cpu_pc, (uint8_t *)(&diff_inst), ilen);
 
             fprintf(itrace_fp, "%s\n", logbuf);
         }
     }
 #endif
 
-    if (top->io_diff_en) {
-        trace_pc = top->io_diff_pc;
+    if (diff_en) {
+        trace_pc = diff_pc;
     }
 
     top->clock = 1;
@@ -133,7 +133,7 @@ void one_clock() {
     main_time++;
 #ifdef CONFIG_DUMPSTART
     if (main_time > CONFIG_DUMPSTART && record_flag == 0) {
-        inst_cnt_recordstart = top->io_inst_cnt;
+        inst_cnt_recordstart = cpu_inst_cnt;
         record_flag = 1;
     }
 #endif
@@ -206,7 +206,7 @@ int main(int argc, char **argv, char **env) {
         panic("check difftest file!\n")
     }
     refresh_gpr_pc_csr();
-    cpu_state.pc = top->io_pc;
+    cpu_state.pc = cpu_pc;
     if (diff_en) {
         diff_file = *(argv + 4) + 5;
         init_difftest(diff_file, img_size, 0, &cpu_state);
@@ -240,7 +240,7 @@ int main(int argc, char **argv, char **env) {
     }
     end = clock();
     int time = double(end - start) / CLOCKS_PER_SEC;
-    vluint64_t inst_cnt = top->io_inst_cnt;
+    vluint64_t inst_cnt = cpu_inst_cnt;
     vluint64_t clock_cnt = main_time / 2;
     if (time == 0)
         time = 1;
@@ -253,7 +253,7 @@ int main(int argc, char **argv, char **env) {
     printf("average inst speed       : %ld insts/s\n", inst_cnt / time);
 #ifdef CONFIG_DUMPSTART
     printf(ANSI_FMT("************ RANGE SIM SUMMARY ************\n", ANSI_FG_RED));
-    vluint64_t range_inst_cnt = top->io_inst_cnt - inst_cnt_recordstart;
+    vluint64_t range_inst_cnt = cpu_inst_cnt - inst_cnt_recordstart;
     vluint64_t range_clock_cnt = clock_cnt - CONFIG_DUMPSTART / 2;
     printf(ANSI_FMT("before range npc ipc     : %f\n", ANSI_FG_YELLOW),
            (double)inst_cnt_recordstart / (double)(CONFIG_DUMPSTART / 2));

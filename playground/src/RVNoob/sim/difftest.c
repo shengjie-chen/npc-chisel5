@@ -16,6 +16,8 @@ extern NPCState npc_state;
 extern uint64_t *cpu_gpr;
 extern uint64_t *cpu_csr;
 extern VRVNoobSim *top;
+extern uint8_t diff_en;
+extern uint32_t diff_pc, diff_inst;
 
 char *diff_file = NULL;
 
@@ -38,7 +40,7 @@ void refresh_gpr_pc_csr() {
     for (i = 0; i < 32; i++) {
         cpu_state.gpr[i] = cpu_gpr[i];
     }
-    cpu_state.pc = top->io_diff_pc;
+    cpu_state.pc = diff_pc;
     for (i = 0; i < CSR_NUM; i++) {
         cpu_state.csr[i] = cpu_csr[i];
     }
@@ -157,7 +159,7 @@ extern uint32_t mem_pc;
 
 void difftest_step(vaddr_t pc, vaddr_t npc) {
     CPU_state ref_r;
-    if (top->io_diff_en) {
+    if (diff_en) {
         if (skip_pc_write != skip_pc_read) {
             // printf("there is insts wait to skip\n");
             // printf("finish_pc/current difftest pc:\t\t" FMT_WORD "\n", finish_pc);
@@ -173,7 +175,7 @@ void difftest_step(vaddr_t pc, vaddr_t npc) {
                     skip_pc_read++;
                 }
                 // printf("\t\t\tskip_pc_buf next read index:%d\n", skip_pc_read);
-                finish_pc = top->io_diff_pc;
+                finish_pc = diff_pc;
                 return;
             }
         }
@@ -187,7 +189,7 @@ void difftest_step(vaddr_t pc, vaddr_t npc) {
         ref_difftest_regcpy(&ref_r, DIFFTEST_TO_DUT);
         checkregs(&ref_r, finish_pc);
 
-        finish_pc = top->io_diff_pc;
+        finish_pc = diff_pc;
     }
 }
 

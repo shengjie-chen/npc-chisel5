@@ -11,13 +11,7 @@ import scala.math.pow
 
 class RVNoobCore extends Module with ext_function with RVNoobConfig {
   val io = IO(new Bundle {
-    val pc        = if (!tapeout) Some(Output(UInt(addr_w.W))) else None
-    val ebreak    = if (!tapeout) Some(Output(Bool())) else None
-    val diff_en   = if (!tapeout) Some(Output(Bool())) else None
-    val diff_pc   = if (!tapeout) Some(Output(UInt(addr_w.W))) else None
-    val diff_inst = if (!tapeout) Some(Output(UInt(inst_w.W))) else None
-    val axi_pc    = if (!tapeout) Some(Output(UInt(addr_w.W))) else None
-    val inst_cnt  = if (!tapeout) Some(Output(UInt(xlen.W))) else None
+    val axi_pc = if (!tapeout || !soc_sim) Some(Output(UInt(addr_w.W))) else None
 
     val interrupt = Input(Bool())
     // >>>>>>>>>>>>>> AXI <<<<<<<<<<<<<<
@@ -416,12 +410,11 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   // ********************************** other !tapeout **********************************
   if (!tapeout) {
     // >>>>>>>>>>>>>> ebreak <<<<<<<<<<<<<<
-    val U_ebreak = DpiEbreak(clock, wb_reg.out.inst, ShiftRegister(rf.io.a0, 3, 1.B), io.ebreak.get)
+    val U_ebreak = DpiEbreak(clock, wb_reg.out.inst, ShiftRegister(rf.io.a0, 3, 1.B))
 
     // >>>>>>>>>>>>>> ipc <<<<<<<<<<<<<<
     val inst_cnt = RegInit(0.U(xlen.W))
-    inst_cnt        := inst_cnt + wb_reg.out.inst_valid.asUInt
-    io.inst_cnt.get := inst_cnt
+    inst_cnt := inst_cnt + wb_reg.out.inst_valid.asUInt
 
     // >>>>>>>>>>>>>> Difftest <<<<<<<<<<<<<<
     val cache_miss_last_next = !cache_miss && RegNext(cache_miss)
@@ -430,13 +423,15 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
     val diff_pc   = RegInit(UInt(addr_w.W), 0x80000000L.U)
     val diff_inst = RegInit(UInt(inst_w.W), 0.U)
 
+    val dpi_diff = Module(new DpiDifftest)
+    dpi_diff.io.en   <> RegNext(wb_reg.out.valid)
+    dpi_diff.io.pc   <> diff_pc
+    dpi_diff.io.inst <> diff_inst
+
     // wb 写完成的周期
     //    io.diff_en := (RegNext(wb_reg.out.valid) || RegNext(cache_miss_last_next)) &&
     //    (ShiftRegister(wb_reg.out.inst, 1, 1.B) =/= 0.U) && (!cache_miss || cache_miss_first)
-    io.diff_en.get   := RegNext(wb_reg.out.valid)
-    io.diff_pc.get   := diff_pc
-    io.diff_inst.get := diff_inst
-    diff_inst        := wb_reg.out.inst
+    diff_inst := wb_reg.out.inst
     when(wb_reg.out.valid) {
       when(mem_reg.out.valid) {
         diff_pc := mem_reg.out.pc
@@ -448,12 +443,12 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
         diff_pc := pc
       }
     }
-  }
 
-  if (!tapeout) {
-    io.pc.get := pc
-    val dpi_npc = Module(new DpiNpc) // use to get npc in sim.c
-    dpi_npc.io.npc <> npc
+    // >>>>>>>>>>>>>> Sim need <<<<<<<<<<<<<<
+    val dpi_pc = Module(new DpiPc) // use to get npc in sim.c
+    dpi_pc.io.pc       <> pc
+    dpi_pc.io.npc      <> npc
+    dpi_pc.io.inst_cnt <> inst_cnt
 
     if (spmu_en) {
       val dpi_branch    = Module(new DpiBranch)
@@ -509,17 +504,38 @@ object RVNoobCore {
   }
 }
 
-class DpiNpc extends BlackBox with HasBlackBoxInline {
+class DpiPc extends BlackBox with HasBlackBoxInline {
   val io = IO(new Bundle {
-    val npc = Input(UInt(32.W))
+    val pc       = Input(UInt(32.W))
+    val npc      = Input(UInt(32.W))
+    val inst_cnt = Input(UInt(64.W))
   })
   setInline(
-    "DpiNpc.v",
+    "DpiPc.v",
     """
-      |import "DPI-C" function void npc_change(input logic [31:0] a);
-      |module DpiNpc(input [31:0] npc);
+      |import "DPI-C" function void pc_change(input logic [31:0] a, input logic [31:0] b, input logic [63:0] c);
+      |module DpiPc(input [31:0] pc, input [31:0] npc, input [63:0] inst_cnt);
       |
-      | always @* npc_change(npc);
+      | always @* pc_change(pc, npc, inst_cnt);
+      |
+      |endmodule
+            """.stripMargin
+  )
+}
+
+class DpiDifftest extends BlackBox with HasBlackBoxInline {
+  val io = IO(new Bundle {
+    val en   = Input(Bool())
+    val pc   = Input(UInt(32.W))
+    val inst = Input(UInt(32.W))
+  })
+  setInline(
+    "DpiDifftest.v",
+    """
+      |import "DPI-C" function void difftest_change(input logic a, input logic [31:0] b, input logic [31:0] c);
+      |module DpiDifftest(input en, input [31:0] pc, input [31:0] inst);
+      |
+      | always @* difftest_change(en, pc, inst);
       |
       |endmodule
             """.stripMargin

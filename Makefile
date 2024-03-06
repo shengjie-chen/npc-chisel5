@@ -3,7 +3,7 @@ BUILD_DIR = ./build
 #export PATH := $(PATH):$(abspath ./utils)
 export NPC_HOME := $(abspath .)
 
-# design module: RVNoob ysyxSoCFull
+# design module: RVNoobSim ysyxSoCFull
 TOPNAME = RVNoobSim
 PRJNAME = RVNoob
 SRC_DIR = ./playground/src

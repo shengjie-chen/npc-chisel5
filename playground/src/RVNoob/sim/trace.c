@@ -159,6 +159,18 @@ bool is_call(uint32_t cpu_inst) {
     return false;
 }
 
+bool is_jr(uint32_t cpu_inst) {
+    uint32_t opcode = cpu_inst & 0b1111111;
+    if (opcode == 0b1100111) {
+        if (((cpu_inst >> 12) & 0b111) == 0) {
+            if (((cpu_inst >> 7) & 0b11111) == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int tail_recursion_index = 0;
 int tail_recursion_buffer[30];
 int first_call = 0;
@@ -233,7 +245,8 @@ void ftrace_call_ret(uint32_t cpu_inst, vaddr_t pc, vaddr_t npc) {
     } else {
         for (int i = 0; i < ftrace_func_num; i++) { // call
             if (npc == symaddr[i]) {
-                printf("unidentified call %s: %x\n", symname[i], cpu_inst);
+                if (!is_jr(cpu_inst))
+                    printf("unidentified call %s: %x\n", symname[i], cpu_inst);
             }
         }
     }

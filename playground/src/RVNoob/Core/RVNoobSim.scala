@@ -4,14 +4,6 @@ import RVNoob.Axi.AxiSlaveMem
 import chisel3._
 
 class RVNoobSim extends Module with ext_function with RVNoobConfig {
-  val io = IO(new Bundle {
-    val pc        = Output(UInt(addr_w.W))
-    val ebreak    = Output(Bool())
-    val diff_en   = Output(Bool())
-    val diff_pc   = Output(UInt(addr_w.W))
-    val diff_inst = Output(UInt(inst_w.W))
-    val inst_cnt  = Output(UInt(xlen.W))
-  })
 
   val rvnoob = RVNoobTile()
 
@@ -51,13 +43,6 @@ class RVNoobSim extends Module with ext_function with RVNoobConfig {
   axi_pmem.io.S_AXI_RRESP   <> rvnoob.io.master.rresp
   axi_pmem.io.S_AXI_RLAST   <> rvnoob.io.master.rlast
 
-  axi_pmem.io.PC <> rvnoob.io.axi_pc
-
-  io.pc        <> rvnoob.io.pc
-  io.ebreak    <> rvnoob.io.ebreak
-  io.diff_en   <> rvnoob.io.diff_en
-  io.diff_pc   <> rvnoob.io.diff_pc
-  io.diff_inst <> rvnoob.io.diff_inst
-  io.inst_cnt  <> rvnoob.io.inst_cnt
+  axi_pmem.io.PC <> rvnoob.io.axi_pc.get
 
 }

@@ -13,7 +13,7 @@
 /// @param raddr
 /// @param rdata
 extern "C" void pmem_read_dpi(long long raddr, long long *rdata, long long pc) {
-	    if (raddr == RTC_ADDR) {
+    if (raddr == RTC_ADDR) {
         struct timeval now;
         gettimeofday(&now, NULL);
         *rdata = now.tv_sec * 1000000 + now.tv_usec;
@@ -64,11 +64,11 @@ extern "C" void pmem_read_dpi(long long raddr, long long *rdata, long long pc) {
     // 总是读取地址为`raddr & ~0x7ull`的8字节返回给`rdata`
     if (likely(in_pmem(raddr))) {
         *rdata = pmem_read(raddr & ~0x7ull, 8);
-		#ifdef CONFIG_MTRACE
+#ifdef CONFIG_MTRACE
         fprintf(mtrace_fp, "T:%ld\tread  pmem ## addr: %llx", main_time, raddr & ~0x7ull);
-		        fprintf(mtrace_fp, " -> 0x%016llx \n", *rdata);
+        fprintf(mtrace_fp, " -> 0x%016llx \n", *rdata);
 #endif
-		    }
+    }
 }
 
 /// @brief dpi函数用于写任意有效地址
@@ -142,9 +142,22 @@ extern "C" void inst_change(const svLogicVecVal *r) {
     // printf("inst : %x\n", cpu_inst);
 }
 
-/// @brief 获取下一个pc值，即下一周期pc寄存器的值
-uint32_t cpu_npc;
-extern "C" void npc_change(const svLogicVecVal *r) { cpu_npc = *(vaddr_t *)(r); }
+/// @brief 获取pc值，即当周期pc寄存器的值; 获取下一个pc值，即下一周期pc寄存器的值; 获取当前执行了多少指令
+uint32_t cpu_pc, cpu_npc, cpu_inst_cnt;
+extern "C" void pc_change(const svLogicVecVal *a, const svLogicVecVal *b, const svLogicVecVal *c) {
+    cpu_pc = *(vaddr_t *)(a);
+    cpu_npc = *(vaddr_t *)(b);
+    cpu_inst_cnt = *(uint64_t *)(c);
+}
+
+/// @brief 获取pc值，即当周期pc寄存器的值; 获取下一个pc值，即下一周期pc寄存器的值; 获取当前执行了多少指令
+uint8_t diff_en;
+uint32_t diff_pc, diff_inst;
+extern "C" void difftest_change(svLogic a, const svLogicVecVal *b, const svLogicVecVal *c) {
+    diff_en = a;
+    diff_pc = *(vaddr_t *)(b);
+    diff_inst = *(uint32_t *)(c);
+}
 
 void npc_ebreak() {
     npc_state.state = NPC_END;
