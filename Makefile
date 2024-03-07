@@ -19,7 +19,7 @@ SRC_CODE_DIR = $(shell find $(abspath $(SRC_DIR)) -maxdepth 2 -type d -name RVNo
 PACKAGE = $(subst /,.,$(subst $(abspath $(SRC_DIR))/,,$(SRC_CODE_DIR))).Core
 
 # gen dir
-GEN_DIR = $(subst $(abspath $(SRC_DIR)),$(BUILD_DIR),$(SRC_CODE_DIR))# $(subst FROM, TO, TEXT)，即将字符串TEXT中的子串FROM变为TO
+GEN_DIR = $(subst $(abspath $(SRC_DIR)),$(BUILD_DIR),$(SRC_CODE_DIR))/$(PRJNAME)# $(subst FROM, TO, TEXT)，即将字符串TEXT中的子串FROM变为TO
 OBJ_DIR = $(GEN_DIR)/obj_dir
 VERILOG_OBJ_DIR = $(GEN_DIR)/Verilog_Gen
 SIM_BIN = $(GEN_DIR)/$(PRJNAME)
@@ -30,9 +30,8 @@ VSRCS += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.v")# add blackbox ver
 ifeq ($(PRJNAME), ysyxSoCFull)
 VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
 endif
-CSRCS_SIM = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(TOPNAME)_sim.cpp")
+CSRCS_SIM = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "$(PRJNAME)_sim.cpp")
 CSRCS_SIM += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.c")
-# CSRCS_SIM += $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.h")
 RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
 
 # rules for verilator
@@ -139,7 +138,7 @@ DISASM_CXXSRC = $(SRC_CODE_DIR)/sim/src/trace/disasm.cc
 DISASM_CXXFLAGS = $(shell llvm-config --cxxflags) -fPIE
 VERILAOTR_LDFLAGS = $(shell llvm-config --libs) -O3 -pie -ldl -lSDL2
 VERILAOTR_LDFLAGS += -fsanitize=address 
-VERILAOTR_CFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -O3 -I$(SRC_CODE_DIR)/sim/include
+VERILAOTR_CFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -DGEN_DIR=\\\"$(GEN_DIR)\\\" -O3 -I$(SRC_CODE_DIR)/sim/include
 sim_npc_vcd: verilog
 	$(call git_commit, "sim $(TOPNAME) RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Write this Makefile by yourself."
@@ -232,7 +231,7 @@ checkformat:
 
 clean:
 	-rm -rf $(BUILD_DIR)
-	-rm *.ii *.s *.o *.d *.json *.v
+	-rm *.ii *.s *.o *.d *.json *.v *.tmp
 
 clean_object:
 	rm -rf $(OBJ_DIR)

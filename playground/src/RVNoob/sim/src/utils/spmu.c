@@ -47,7 +47,7 @@ uint64_t typeb_br = 0;
 uint64_t ret_inst = 0;
 uint64_t ret_error_inst = 0;
 #ifdef RAS_SPMU
-#define RAS_PATH NPC_HOME "/build/RVNoob/npc-ras-log.txt"
+#define RAS_PATH GEN_DIR "/npc-ras-log.txt"
 const char *ras_file = RAS_PATH;
 FILE *ras_fp = NULL;
 

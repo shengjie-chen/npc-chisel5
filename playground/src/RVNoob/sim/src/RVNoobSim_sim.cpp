@@ -43,10 +43,10 @@ VRVNoobSim *top = new VRVNoobSim;
 #ifdef CONFIG_DUMPWAVE
 #ifdef CONFIG_FSTWAVE
 VerilatedFstC *tfp = new VerilatedFstC;
-#define WAVE_FILE NPC_HOME "/build/RVNoob/RVNoobSim.fst"
+#define WAVE_FILE GEN_DIR "/RVNoobSim.fst"
 #else
 VerilatedVcdC *tfp = new VerilatedVcdC;
-#define WAVE_FILE NPC_HOME "/build/RVNoob/RVNoobSim.vcd"
+#define WAVE_FILE GEN_DIR "/RVNoobSim.vcd"
 #endif
 #endif
 
@@ -141,6 +141,7 @@ int main(int argc, char **argv, char **env) {
 #ifdef CONFIG_DUMPWAVE
     top->trace(tfp, 99);
     tfp->open(WAVE_FILE);
+	Assert(tfp != NULL, "open wave file failed\n");
 #endif
     clock_t start, end;
     start = clock();
@@ -153,10 +154,12 @@ int main(int argc, char **argv, char **env) {
 #ifdef CONFIG_ITRACE
     init_disasm("riscv64-pc-linux-gnu");
     itrace_fp = fopen(itrace_file, "w+");
+	Assert(itrace_fp != NULL, "open itrace_file failed\n");
     printf("[ log ] Inst Trace Log is written to %s\n", itrace_file);
 #endif
 #ifdef CONFIG_MTRACE
     mtrace_fp = fopen(mtrace_file, "w");
+	Assert(mtrace_fp != NULL, "open mtrace_file failed\n");
     printf("[ log ] Mem Trace Log is written to %s\n", mtrace_file);
 #endif
 

@@ -3,20 +3,20 @@
 #include <elf.h>
 
 #ifdef CONFIG_MTRACE
-#define MTRACE_PATH NPC_HOME "/build/RVNoob/npc-mtrace-log.txt"
+#define MTRACE_PATH GEN_DIR "/npc-mtrace-log.txt"
 const char *mtrace_file = MTRACE_PATH;
 FILE *mtrace_fp = NULL;
 #endif
 
 #ifdef CONFIG_FTRACE
-#define FTRACE_PATH NPC_HOME "/build/RVNoob/npc-ftrace-log.txt"
+#define FTRACE_PATH GEN_DIR "/npc-ftrace-log.txt"
 const char *ftrace_file = FTRACE_PATH;
 FILE *ftrace_fp = NULL;
 char *elf_file = NULL;
 #endif
 
 #ifdef CONFIG_ITRACE
-#define ITRACE_PATH NPC_HOME "/build/RVNoob/npc-itrace-log.txt"
+#define ITRACE_PATH GEN_DIR "/npc-itrace-log.txt"
 char logbuf[128];
 FILE *itrace_fp;
 const char *itrace_file = ITRACE_PATH;
@@ -37,7 +37,8 @@ void init_ftrace(const char *elf_file) {
         exit(0);
     }
     ftrace_fp = fopen(ftrace_file, "w");
-
+	Assert(ftrace_fp, "ftrace_fp open failed\n");
+	
     // 解析head
     Elf64_Ehdr elf_head;
     int a;
