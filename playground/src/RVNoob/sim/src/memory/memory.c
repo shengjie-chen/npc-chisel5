@@ -1,6 +1,6 @@
+#include "memory/memory.h"
 #include "common.h"
 #include "device/device.h"
-#include "memory/memory.h"
 #include "trace/trace.h"
 #include "utils/difftest.h"
 
@@ -17,25 +17,27 @@ uint8_t *guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
 long load_img() {
     if (~strcmp(img_file, "default")) {
         printf("No image is given. Use the default build-in image.\n");
+        memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));
         return 4096; // built-in image size
     }
 
     FILE *fp = fopen(img_file, "rb");
     if (fp == NULL) {
-        printf("Can not open '%s'", img_file);
+        printf("Can not open %s\n", img_file);
+		return 1;
+    } else {
+        fseek(fp, 0, SEEK_END);
+        long size = ftell(fp);
+
+        printf("The image is %s, size = %ld\n", img_file, size);
+
+        fseek(fp, 0, SEEK_SET);
+        int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
+        assert(ret == 1);
+
+        fclose(fp);
+        return size;
     }
-
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-
-    printf("The image is %s, size = %ld\n", img_file, size);
-
-    fseek(fp, 0, SEEK_SET);
-    int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
-    assert(ret == 1);
-
-    fclose(fp);
-    return size;
 }
 
 word_t host_read(void *addr, int len) {

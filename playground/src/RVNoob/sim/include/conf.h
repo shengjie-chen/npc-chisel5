@@ -12,42 +12,44 @@
 
 // ---------------------------->switch
 #define CONFIG_FSTWAVE
+#define SOC_SIM
 
-#define CONFIG_ITRACE
-#define CONFIG_FTRACE
-#define CONFIG_MTRACE
+// #define CONFIG_ITRACE
+// #define CONFIG_FTRACE
+// #define CONFIG_MTRACE
 
 #define SPMU_ENABLE
 
-// #define SIM_TIME_MAX 50000000
-
 #ifdef SPMU_ENABLE
-#define RAS_SPMU
+// #define RAS_SPMU
 #endif
 
-#if defined(CONFIG_ITRACE) || defined(RAS_SPMU) || defined(CONFIG_FTRACE)
-#define CONFIG_DUMPSTART 0
-#endif
-
-#define CONFIG_DIFFTEST
+// #define CONFIG_DIFFTEST
 // #define CONFIG_DIFFTEST_REF_MEM_POINT
 
-// 1M --> 1.6GB
-#define CONFIG_DUMPWAVE
-#define CONFIG_DUMPSTART 0
+// #define SIM_TIME_MAX 50000
+
+// #define CONFIG_DUMPWAVE
+// #define CONFIG_DUMPSTART 0
 // #define CONFIG_DUMPSTART 40000000
+
+// ---------------------------->switch end
 
 #ifndef SIM_TIME_MAX
 #define SIM_TIME_MAX -1
 #endif
 
-// ---------------------------->switch end
+#if defined(CONFIG_ITRACE) || defined(RAS_SPMU) || defined(CONFIG_FTRACE)
+#ifndef CONFIG_DUMPWAVE
+#define CONFIG_DUMPSTART 0
+#endif
+#endif
 
 // #define BIGPROGRAM
 
 // #ifdef BIGPROGRAM
 // #define BIGPROGRAMDEBUG
-// #define CONFIG_DIFFTEST
+////#define CONFIG_DIFFTEST
 // #endif
 
 // #ifndef BIGPROGRAM
@@ -55,7 +57,7 @@
 // #define CONFIG_FTRACE
 // #define CONFIG_MTRACE
 // #define CONFIG_DUMPWAVE
-// #define CONFIG_DIFFTEST
+////#define CONFIG_DIFFTEST
 // #define CONFIG_DUMPSTART 0
 // #endif
 

@@ -6,8 +6,8 @@
  * @FilePath: /npc/playground/src/RVnpc/RVNoob/RVNoob_sim.cpp
  * @Description: 对RVNoob处理器进行仿真的主文件
  */
-#include "VRVNoobSim.h"
-#include "VRVNoobSim__Dpi.h"
+#include "VysyxSoCFull.h"
+#include "VysyxSoCFull__Dpi.h"
 #include "svdpi.h"
 #include "time.h"
 #include "verilated.h"
@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "device/device.h"
-#include "utils/difftest.h"
+// #include "utils/difftest.h"
 #include "memory/memory.h"
 #include "trace/trace.h"
 #include "utils/cpudpi.h"
@@ -39,14 +39,14 @@ vaddr_t trace_pc = 0x80000000;
 extern FILE *mtrace_fp;
 #endif
 
-VRVNoobSim *top = new VRVNoobSim;
+VysyxSoCFull *top = new VysyxSoCFull;
 #ifdef CONFIG_DUMPWAVE
 #ifdef CONFIG_FSTWAVE
 VerilatedFstC *tfp = new VerilatedFstC;
-#define WAVE_FILE GEN_DIR "/RVNoobSim.fst"
+#define WAVE_FILE GEN_DIR "/ysyxSoCFull.fst"
 #else
 VerilatedVcdC *tfp = new VerilatedVcdC;
-#define WAVE_FILE GEN_DIR "/RVNoobSim.vcd"
+#define WAVE_FILE GEN_DIR "/ysyxSoCFull.vcd"
 #endif
 #endif
 
@@ -59,15 +59,15 @@ bool record_flag = 0;
 void one_clock() {
     vaddr_t pc = cpu_pc;
     top->clock = 0;
-    if (in_pmem(cpu_pc)) {
-        // top->io_inst = pmem_read(cpu_pc, 4);
-    } else {
-        printf("error happen!! time %ld read inst addr : %x\n", main_time, cpu_pc);
-        // tfp->close();
-        // exit(1);
-        npc_state.state = NPC_ABORT;
-        return;
-    }
+    // if (in_pmem(cpu_pc)) {
+    //     // top->io_inst = pmem_read(cpu_pc, 4);
+    // } else {
+    //     printf("error happen!! time %ld read inst addr : %x\n", main_time, cpu_pc);
+    //     // tfp->close();
+    //     // exit(1);
+    //     npc_state.state = NPC_ABORT;
+    //     return;
+    // }
     top->eval();
 #ifdef CONFIG_DUMPWAVE
     if (main_time > CONFIG_DUMPSTART)
@@ -221,6 +221,12 @@ int main(int argc, char **argv, char **env) {
         init_ftrace(elf_file);
     }
 #endif
+
+	if(argc > 5){
+		mrom_file = *(argv + 5);
+		printf("mrom software: %s\n", mrom_file);
+		init_mrom(mrom_file);
+	}
 
     // printf("%s\n",*(argv + 2));
     // printf("%d\n",sdb_en);

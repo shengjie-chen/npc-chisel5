@@ -1,7 +1,5 @@
-#include "common.h"
 #include "device/device.h"
-#include <SDL2/SDL.h>
-
+#include "trace/trace.h"
 // extern NPCState npc_state;
 
 uint64_t get_time();
@@ -136,6 +134,48 @@ void init_vga() {
     // add_mmio_map("vmem", CONFIG_FB_ADDR, vmem, screen_size(), NULL);
     IFDEF(CONFIG_VGA_SHOW_SCREEN, init_screen());
     IFDEF(CONFIG_VGA_SHOW_SCREEN, memset(vmem, 0, screen_size));
+}
+
+// --------------------------------> flash
+
+extern "C" void flash_read(uint32_t addr, uint32_t *data) { assert(0); }
+
+// --------------------------------> mrom
+char *mrom_file = NULL;
+// const uint32_t mrom[] = {
+//     0x00100073, // ebreak
+//     0x01858593, // addi	a1,a1,24        0x80000030
+//     0x004c8c93, // addi	s9,s9,4         0x80000034
+//     0x00840413, // addi	s0,s0,8         0x80000038
+//     0x004c8c93, // addi	s9,s9,4         0x80000034
+//     0x00840413, // addi	s0,s0,8         0x80000038
+//     0x004a0a13  // addi	s4,s4,4         0x8000003c
+// };
+
+uint32_t mrom[1024] = {};
+
+void init_mrom(const char *mrom_file) {
+    FILE *fp = fopen(mrom_file, "rb");
+    if (fp == NULL) {
+        printf("mrom file not found\n");
+        exit(1);
+    }
+    fseek(fp, 0, SEEK_END);
+    size_t size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    fread(mrom, size, 1, fp);
+    fclose(fp);
+    printf("mrom file loaded, size = %ld Byte\n", size);
+}
+
+extern "C" void mrom_read(uint32_t addr, uint32_t *data) {
+    uint32_t offset = (addr - 0x20000000) & ~0x3;
+    // Assert(offset < sizeof(mrom), "mrom read out of bound, addr:%d", offset);
+    *data = mrom[offset / 4];
+#ifdef CONFIG_MTRACE
+    fprintf(mtrace_fp, "read  mrom ## addr: %llx", addr & ~0x3ull);
+    fprintf(mtrace_fp, " -> 0x%016llx \n", *data);
+#endif
 }
 
 // --------------------------------> device

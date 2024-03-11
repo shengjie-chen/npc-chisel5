@@ -166,7 +166,9 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
 
   if (tapeout) {
     pc := Mux(pc_reset || reset.asBool, 0x30000000L.U(addr_w.W), Mux(pc_en, npc, pc))
-  } else {
+  } else if(soc_sim){
+    pc := Mux(pc_reset || reset.asBool, 0x20000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
+  } else{
     pc := Mux(pc_reset || reset.asBool, 0x80000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
   }
   npc      := Mux(pre_dnpc_en, pre_dnpc, npc_t)
@@ -335,9 +337,14 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
       rctrl.len   := 0.U.asTypeOf(rctrl.len)
     }
 
+    val clint_address = (0x02000000L.U, 0x0200ffff.U)
+    def inclint(addr: UInt): Bool = {
+      addr >= clint_address._1 && addr <= clint_address._2
+    }
+
     when(
-      (dcache.io.axi_rctrl.addr(31, 28) === 0.U && dcache.io.axi_rctrl.en) ||
-        (dcache.io.axi_wctrl.addr(31, 28) === 0.U && dcache.io.axi_wctrl.en)
+      (inclint(dcache.io.axi_rctrl.addr) && dcache.io.axi_rctrl.en) ||
+        (inclint(dcache.io.axi_wctrl.addr) && dcache.io.axi_wctrl.en)
     ) {
       clint.io.wctrl <> dcache.io.axi_wctrl
       clint.io.rctrl <> dcache.io.axi_rctrl

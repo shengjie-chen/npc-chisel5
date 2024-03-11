@@ -23,7 +23,7 @@ trait RVNoobConfig extends util_function with BranchConfig {
   val fpga:            Boolean = false
   val tapeout:         Boolean = false
   val spmu_en:         Boolean = true
-  val soc_sim:         Boolean = false
+  val soc_sim:         Boolean = true
   val simplify_design: Boolean = !tapeout && !soc_sim
   val ysyxid = "ysyx_22040495"
   require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
