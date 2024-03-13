@@ -33,7 +33,7 @@ const vluint64_t sim_time = SIM_TIME_MAX; // 最高仿真时间 可选：100
 NPCState npc_state;
 /// @brief NPC寄存器状态
 CPU_state cpu_state;
-vaddr_t trace_pc = 0x80000000;
+vaddr_t trace_pc = RESET_VECTOR;
 
 #ifdef CONFIG_MTRACE
 extern FILE *mtrace_fp;
@@ -136,6 +136,8 @@ void one_clock() {
 }
 
 int main(int argc, char **argv, char **env) {
+	printf("\n###### SIM Begin ######\n");
+
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 #ifdef CONFIG_DUMPWAVE
@@ -222,11 +224,11 @@ int main(int argc, char **argv, char **env) {
     }
 #endif
 
-	if(argc > 5){
-		mrom_file = *(argv + 5);
-		printf("mrom software: %s\n", mrom_file);
-		init_mrom(mrom_file);
-	}
+	// if(argc > 5){
+	// 	mrom_file = *(argv + 5);
+	// 	printf("mrom software: %s\n", mrom_file);
+	// 	init_mrom(mrom_file);
+	// }
 
     // printf("%s\n",*(argv + 2));
     // printf("%d\n",sdb_en);

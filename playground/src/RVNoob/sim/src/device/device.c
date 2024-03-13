@@ -136,6 +136,7 @@ void init_vga() {
     IFDEF(CONFIG_VGA_SHOW_SCREEN, memset(vmem, 0, screen_size));
 }
 
+#ifdef SOC_SIM
 // --------------------------------> flash
 
 extern "C" void flash_read(uint32_t addr, uint32_t *data) { assert(0); }
@@ -152,32 +153,35 @@ char *mrom_file = NULL;
 //     0x004a0a13  // addi	s4,s4,4         0x8000003c
 // };
 
-uint32_t mrom[1024] = {};
+uint8_t mrom[MROM_SIZE] = {};
 
-void init_mrom(const char *mrom_file) {
-    FILE *fp = fopen(mrom_file, "rb");
-    if (fp == NULL) {
-        printf("mrom file not found\n");
-        exit(1);
-    }
-    fseek(fp, 0, SEEK_END);
-    size_t size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    fread(mrom, size, 1, fp);
-    fclose(fp);
-    printf("mrom file loaded, size = %ld Byte\n", size);
-}
+// size_t init_mrom(const char *mrom_file) {
+//     FILE *fp = fopen(mrom_file, "rb");
+//     if (fp == NULL) {
+//         printf("mrom file not found\n");
+//         exit(1);
+//     }
+
+//     fseek(fp, 0, SEEK_END);
+//     size_t size = ftell(fp);
+//     printf("mrom file loaded, size = 0x%lx Byte\n", size);
+//     fseek(fp, 0, SEEK_SET);
+//     int ret = fread(mrom, size, 1, fp);
+//     assert(ret == 1);
+//     fclose(fp);
+//     return size;
+// }
 
 extern "C" void mrom_read(uint32_t addr, uint32_t *data) {
     uint32_t offset = (addr - 0x20000000) & ~0x3;
     // Assert(offset < sizeof(mrom), "mrom read out of bound, addr:%d", offset);
-    *data = mrom[offset / 4];
+    *data = *(uint32_t *)(mrom + offset);
 #ifdef CONFIG_MTRACE
     fprintf(mtrace_fp, "read  mrom ## addr: %llx", addr & ~0x3ull);
     fprintf(mtrace_fp, " -> 0x%016llx \n", *data);
 #endif
 }
-
+#endif
 // --------------------------------> device
 
 void device_update() {

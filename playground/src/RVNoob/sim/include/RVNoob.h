@@ -5,7 +5,11 @@
 // #define PMEM64 1
 // #endif
 
+#ifdef SOC_SIM
+#define RESET_VECTOR (MROM_PORT + CONFIG_PC_RESET_OFFSET)
+#else
 #define RESET_VECTOR (CONFIG_MBASE + CONFIG_PC_RESET_OFFSET)
+#endif
 #define CONFIG_PC_RESET_OFFSET 0x0
 
 typedef MUXDEF(CONFIG_ISA64, uint64_t, uint32_t) word_t;

@@ -53,6 +53,7 @@ ifeq ($(WAVE_FORMAT), VCD)
 endif
 
 # VERILATOR_CFLAGS += -MMD --build -cc -O3 --x-assign fast --x-initial fast --noassert --autoflush
+# VERILATOR_CFLAGS += --autoflush
 VERILATOR_CFLAGS += -cc --exe --build
 VERILATOR_CFLAGS += -O3 --timescale "1ns/1ns" --no-timing
 ifeq ($(PRJNAME), ysyxSoCFull)
@@ -103,7 +104,7 @@ update_config_spmu:
     fi
 
 ifeq ($(TOPNAME), RVNoobSim)
-update_config:
+update_config: update_config_spmu
 	@sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	@echo "[scala config]: tapeout set to false"
 	@sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
@@ -114,7 +115,7 @@ update_config:
 socgen:
 
 else
-update_config:
+update_config: update_config_spmu
 	@sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	@echo "[scala config]: tapeout set to false"
 	@sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
@@ -136,10 +137,10 @@ split_verilog:
 	done
 
 verilog_post_processing:
-	@sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/`ifndef/,/`endif/d;/`endif/d' $(VPPFILE)
+	@#sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/`ifndef/,/`endif/d;/`endif/d' $(VPPFILE)
 	@sed -i '/firrtl_black_box_resource_files.f/, $$d' $(VPPFILE)
-	@sed -i '/^\/\//d' $(VPPFILE)
-	@sed -i '/^$$/N;/^\n$$/D' $(VPPFILE)
+	@#sed -i '/^\/\//d' $(VPPFILE)
+	@#sed -i '/^$$/N;/^\n$$/D' $(VPPFILE)
 	@# make split_verilog VPPFILE=$(VPPFILE)
 
 
@@ -149,7 +150,7 @@ TOPNAME:=ysyx_22040495
 endif
 WAVE_SAVE_FILE = wavefile/soc/init.gtkw
 
-verilog: update_config_spmu update_config socgen
+verilog: update_config socgen
 	rm -rf $(VERILOG_OBJ_DIR)
 	mkdir -p $(VERILOG_OBJ_DIR)
 	./mill -i __.test.runMain $(PACKAGE).$(TOPMODULE_GEN) -td $(VERILOG_OBJ_DIR)
@@ -172,7 +173,7 @@ sim_npc_vcd_without_gtk: verilog
 		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILAOTR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 
-sim_npc_vcd_without_regen:
+sim_npc_vcd_without_regen: update_config
 	mkdir -p $(OBJ_DIR)
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator -$(VERILATOR_CFLAGS) --top $(PRJNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
@@ -181,7 +182,7 @@ sim_npc_vcd_without_regen:
 	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
 
-sim_npc_vcd_without_regen_gtk:
+sim_npc_vcd_without_regen_gtk: update_config
 	mkdir -p $(OBJ_DIR)
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_CFLAGS) --top $(PRJNAME) --Mdir $(OBJ_DIR) \

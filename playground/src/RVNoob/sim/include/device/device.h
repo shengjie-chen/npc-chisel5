@@ -17,7 +17,14 @@
 //         ioe_write(reg, &__io_param);                                                                                   \
 //     })
 
-#ifdef SIM_SOC
+#ifdef SOC_SIM
+
+#define MROM_PORT 0x20000000
+#define SRAM_PORT 0x0f000000
+#define UART_PORT 0x10000000L
+
+#define MROM_SIZE 4 * 1024
+#define SRAM_SIZE 8 * 1024
 
 #define DEVICE_BASE 0xa0000000
 #define MMIO_BASE DEVICE_BASE
@@ -54,8 +61,10 @@ void init_vga();
 void init_i8042();
 void i8042_data_io_handler();
 
+#ifdef SOC_SIM
 extern char *mrom_file;
 extern uint32_t mrom[1024];
-void init_mrom(const char* mrom_file);
+size_t init_mrom(const char* mrom_file);
+#endif
 
 #endif
