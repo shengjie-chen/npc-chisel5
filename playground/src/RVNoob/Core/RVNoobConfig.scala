@@ -5,7 +5,20 @@ import chisel3.util._
 
 import scala.math.pow
 
-trait RVNoobConfig extends util_function with BranchConfig {
+trait RVNoobModeConfig {
+  // type : 0 - sim; 1 - tapeout; 2 - fpga
+  val fpga:            Boolean = false
+  val tapeout:         Boolean = true
+  val spmu_en:         Boolean = false
+  val soc_sim:         Boolean = false
+  val simplify_design: Boolean = !tapeout && !soc_sim
+  require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
+  if (tapeout) {
+    require(!spmu_en, "spmu_en must be false when tapeout is true")
+  }
+}
+
+trait RVNoobConfig extends util_function with BranchConfig with RVNoobModeConfig {
   val alu_op_w   = 5 //alu_op_width
   val jdg_op_w   = 4 //judge_op_width
   val jdgl_op_w  = 3 //judge_load_op_width
@@ -19,18 +32,51 @@ trait RVNoobConfig extends util_function with BranchConfig {
   val ICacheSize = 4
   val DCacheSize = 4
 
-  // type : 0 - sim; 1 - tapeout; 2 - fpga
-  val fpga:            Boolean = false
-  val tapeout:         Boolean = false
-  val spmu_en:         Boolean = true
-  val soc_sim:         Boolean = true
-  val simplify_design: Boolean = !tapeout && !soc_sim
   val ysyxid = "ysyx_22040495"
-  require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
-  if (tapeout) {
-    require(spmu_en, "spmu_en must be true when tapeout is true")
-  }
   def getClassName: String = this.getClass.toString.split("\\.").last
+}
+
+trait RVNoobMemMap extends RVNoobModeConfig {
+  val mem_map =
+    if (tapeout)
+      Map(
+        "reserve1" -> (0x00000000L.U, 0x01ffffffL.U),
+        "clint"    -> (0x02000000L.U, 0x0200ffffL.U),
+        "reserve2" -> (0x02010000L.U, 0x0fffffffL.U),
+        "uart"     -> (0x10000000L.U, 0x10000fffL.U),
+        "spi"      -> (0x10001000L.U, 0x10001fffL.U),
+        "vga"      -> (0x10002000L.U, 0x10002fffL.U),
+        "ps2"      -> (0x10003000L.U, 0x10003fffL.U),
+        "ethernet" -> (0x10004000L.U, 0x10004fffL.U),
+        "reserve3" -> (0x10005000L.U, 0x2fffffffL.U),
+        "flash"    -> (0x30000000L.U, 0x3fffffffL.U),
+        "chiplink" -> (0x40000000L.U, 0x7fffffffL.U),
+        "mem"      -> (0x80000000L.U, 0xfbffffffL.U),
+        "sdram"    -> (0xfc000000L.U, 0xffffffffL.U)
+      )
+    else if (soc_sim)
+      Map(
+        "sram" -> (0x0f000000L.U, 0x0f001fffL.U),
+        "mrom" -> (0x02000000L.U, 0x02000fffL.U)
+      )
+    else
+      Map(
+        "clint"  -> (0x02000000L.U, 0x0200ffffL.U),
+        "pmem"   -> (0x80000000L.U, 0x88000000L.U),
+        "device" -> (0xa0000000L.U, 0xa1ffffffL.U)
+      )
+
+  def check_in_range(addr: UInt, device: String): Bool = {
+    addr >= mem_map(device)._1 && addr <= mem_map(device)._2
+  }
+
+  def check_in_range(addr: UInt, size: UInt, device: String): Bool = {
+    check_in_range(addr, device) && check_in_range(addr + size - 1.U, device)
+  }
+
+  def check_in_range(addr: UInt, size: UInt, device: Seq[String]): Bool = {
+    device.map(check_in_range(addr, size, _)).reduce(_ || _)
+  }
 }
 
 trait BranchConfig {
@@ -38,7 +84,7 @@ trait BranchConfig {
   val BTBSet         = pow(2, BTBSetWidth).toInt
   val BTBWay         = 2 // support 1 or 2
   val BTBTagWidth    = 11
-  val BTBBtaComWidth = 12 // when way > 1, the width of the common part of bta
+  val BTBBtaComWidth = 0 // when way > 1, the width of the common part of bta
   val br_type_id     = Map("call" -> 0, "return" -> 1, "taken_br" -> 2, "typeb" -> 3, "not_br" -> 4, "intr" -> 5)
 
   val PhtAddrWidth = 5

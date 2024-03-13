@@ -9,9 +9,9 @@ import chisel3.util._
 
 import scala.math.pow
 
-class RVNoobCore extends Module with ext_function with RVNoobConfig {
+class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobMemMap{
   val io = IO(new Bundle {
-    val axi_pc = if (!tapeout || !soc_sim) Some(Output(UInt(addr_w.W))) else None
+    val axi_pc = if (!tapeout && !soc_sim) Some(Output(UInt(addr_w.W))) else None
 
     val interrupt = Input(Bool())
     // >>>>>>>>>>>>>> AXI <<<<<<<<<<<<<<
@@ -337,7 +337,8 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
       rctrl.len   := 0.U.asTypeOf(rctrl.len)
     }
 
-    val clint_address = (0x02000000L.U, 0x0200ffff.U)
+//    val clint_address = (0x02000000L.U, 0x0200ffff.U)
+    val clint_address = mem_map("clint")
     def inclint(addr: UInt): Bool = {
       addr >= clint_address._1 && addr <= clint_address._2
     }
@@ -374,7 +375,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig {
   maxi.io.wctrl <> axi_crossbar.maxi.wctrl
   maxi.io.maxi  <> io.master
 
-  if (!tapeout) {
+  if (!tapeout && !soc_sim) {
     io.axi_pc.get <> axi_crossbar.maxi.pc
   }
 

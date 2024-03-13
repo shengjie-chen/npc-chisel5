@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 #firtool.elf.strip --lowering-options=disallowLocalVariables,disallowPackedArrays,locationInfoStyle=wrapInAtSquareBracket $@
 #firtool.elf.strip --lowering-options=disallowLocalVariables,disallowPackedArrays,locationInfoStyle=wrapInAtSquareBracket,mitigateVivadoArrayIndexConstPropBug  $@
-firtool.elf.strip --lowering-options=disallowLocalVariables,locationInfoStyle=wrapInAtSquareBracket $@
+firtool.elf.strip --lowering-options=disallowLocalVariables,locationInfoStyle=wrapInAtSquareBracket,disallowPortDeclSharing  $@
 #firtool.elf.strip --lowering-options=disallowLocalVariables,locationInfoStyle=wrapInAtSquareBracket,mitigateVivadoArrayIndexConstPropBug $@

@@ -1,7 +1,7 @@
 package RVNoob.Cache
 
 import RVNoob.Axi.{AxiReadCtrlIO, AxiWriteCtrlIO}
-import RVNoob.Core.RVNoobConfig
+import RVNoob.Core.{RVNoobConfig, RVNoobMemMap}
 import chisel3._
 import chisel3.util._
 
@@ -22,7 +22,8 @@ class DCache(
   //  val axiDataWidth:  Int     = 64,
   //  val missDelay:     Int     = 4
 ) extends Module
-    with RVNoobConfig {
+    with RVNoobConfig
+    with RVNoobMemMap {
   val cacheLineNum:    Int = cacheSize / cacheLineSize // 128
   val sets:            Int = cacheLineNum / ways // 32
   val byteOffsetWidth: Int = log2Ceil(cacheLineSize) // 5
@@ -213,9 +214,9 @@ class DCache(
     0.U,
     Array(
       (io.zero_ex_op === 3.U || !hit) -> (0xff.U << data_shift(6, 3)), // write double word
-      (io.zero_ex_op === 2.U) -> (0xf.U << data_shift(6, 3)), // write word
-      (io.zero_ex_op === 1.U) -> (0x3.U << data_shift(6, 3)), // write half word
-      (io.zero_ex_op === 0.U) -> (0x1.U << data_shift(6, 3)) // write byte
+      (io.zero_ex_op === 2.U)         -> (0xf.U << data_shift(6, 3)), // write word
+      (io.zero_ex_op === 1.U)         -> (0x3.U << data_shift(6, 3)), // write half word
+      (io.zero_ex_op === 0.U)         -> (0x1.U << data_shift(6, 3)) // write byte
     )
   )
   val expandedSignals = Wire(Vec(16, UInt(8.W)))
@@ -480,6 +481,31 @@ class DCache(
     dpi_cache_cnt.clk   := clock
     dpi_cache_cnt.valid := io.in_valid && (io.wen || io.ren) && inpmem
     dpi_cache_cnt.miss  := inpmem_miss
+  }
+
+  // ********************************** Address Check **********************************
+
+  if (isICache) {
+    def data_size(size: UInt, burst: UInt, len: UInt): UInt = {
+      val data_size_t = Wire(UInt())
+      data_size_t := 0.U
+      when(burst === 0.U) {
+        data_size_t := (1.U << size).asUInt
+      }.elsewhen(burst === 1.U) {
+        data_size_t := (len + 1.U) * (1.U << size).asUInt
+      }
+      data_size_t
+    }
+
+    if (tapeout) {
+      assert(
+        io.axi_rctrl.en && check_in_range(
+          io.axi_rctrl.addr,
+          data_size(io.axi_rctrl.size, io.axi_rctrl.burst, io.axi_rctrl.len),
+          Seq("flash", "mem", "sdram")
+        )
+      )
+    }
   }
 
   override def getClassName: String = if (isICache) "ICache" else "DCache"

@@ -32,7 +32,7 @@ class BTB extends Module with RVNoobConfig {
     val hit     = Output(Bool())
     val update  = Input(new BTBUpdate)
   })
-  val btaWidth = addr_w - 2 - BTBBtaComWidth
+  val btaWidth = addr_w - 2 - BTBBtaComWidth // 32bit inst do not need low 2 bit
 
   val btb_arrays =
     RegInit(
@@ -109,7 +109,9 @@ class BTB extends Module with RVNoobConfig {
       btb_arrays(correct_way)(correct_idx).bta     := io.update.bta(addr_w - BTBBtaComWidth - 1, 2)
       btb_arrays(correct_way)(correct_idx).br_type := io.update.br_type
       when(!io.update.entity_invalid) {
-        bta_arrays(correct_idx) := io.update.bta(addr_w - 1, addr_w - BTBBtaComWidth)
+        if (BTBBtaComWidth > 0) {
+          bta_arrays(correct_idx) := io.update.bta(addr_w - 1, addr_w - BTBBtaComWidth)
+        }
       }
     }
   }
