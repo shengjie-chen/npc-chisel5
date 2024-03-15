@@ -484,26 +484,28 @@ class DCache(
   }
 
   // ********************************** Address Check **********************************
+  def data_size(size: UInt, burst: UInt, len: UInt): UInt = {
+    val data_size_t = Wire(UInt())
+    data_size_t := 0.U
+    when(burst === 0.U) {
+      data_size_t := (1.U << size).asUInt
+    }.elsewhen(burst === 1.U) {
+      data_size_t := (len + 1.U) * (1.U << size).asUInt
+    }
+    data_size_t
+  }
 
   if (isICache) {
-    def data_size(size: UInt, burst: UInt, len: UInt): UInt = {
-      val data_size_t = Wire(UInt())
-      data_size_t := 0.U
-      when(burst === 0.U) {
-        data_size_t := (1.U << size).asUInt
-      }.elsewhen(burst === 1.U) {
-        data_size_t := (len + 1.U) * (1.U << size).asUInt
-      }
-      data_size_t
-    }
-
     if (tapeout) {
       assert(
-        io.axi_rctrl.en && check_in_range(
-          io.axi_rctrl.addr,
-          data_size(io.axi_rctrl.size, io.axi_rctrl.burst, io.axi_rctrl.len),
-          Seq("flash", "mem", "sdram")
-        )
+        !io.axi_rctrl.en ||
+          io.axi_rctrl.en && check_in_range(
+            io.axi_rctrl.addr,
+            data_size(io.axi_rctrl.size, io.axi_rctrl.burst, io.axi_rctrl.len),
+            Seq("flash", "mem", "sdram")
+          ),
+        "read addr: %x\n",
+        io.axi_rctrl.addr
       )
     }
   }

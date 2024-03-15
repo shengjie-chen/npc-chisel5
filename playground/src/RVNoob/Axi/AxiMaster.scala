@@ -81,7 +81,7 @@ class AxiMaster extends Module with RVNoobConfig {
   //----------------------------
   io.maxi.bready      := bready
   io.wctrl.bhandshake := bready && io.maxi.bvalid
-  assert(io.wctrl.bhandshake && (io.maxi.bresp =/= 0.U), "bresp = %d\n", io.maxi.bresp)
+  assert(!io.wctrl.bhandshake || io.wctrl.bhandshake && (io.maxi.bresp === 0.U), "bresp = %d\n", io.maxi.bresp)
 
   //----------------------------
   //Read Address Channel
@@ -124,7 +124,7 @@ class AxiMaster extends Module with RVNoobConfig {
   io.rctrl.handshake := rready && io.maxi.rvalid
   io.rctrl.data      := io.maxi.rdata
   io.busy            := busrt_read_active || busrt_write_active
-  assert(io.rctrl.handshake && (io.maxi.rresp =/= 0.U), "rresp = %d\n", io.maxi.rresp)
+  assert(!io.rctrl.handshake || io.rctrl.handshake && (io.maxi.rresp === 0.U), "rresp = %d\n", io.maxi.rresp)
 
 
   override def desiredName = if (tapeout) ysyxid + "_" + getClassName else getClassName

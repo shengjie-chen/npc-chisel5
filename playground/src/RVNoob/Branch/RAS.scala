@@ -56,9 +56,9 @@ class RAS extends Module with RVNoobConfig {
   }
   io.pop.bits := Mux(io.pop.ready, Mux(io.push.valid, io.push.bits, ras(pop_index).addr), pop_bits_reg)
 
-  assert(io.push.valid && io.push.bits =/= 0.U, "RAS push 0")
-//when(io.push.valid && io.push.bits =/= 0.U){
-//  printf
+  assert(!io.push.valid || io.push.valid && io.push.bits =/= 0.U, "RAS push 0")
+//when((io.push.valid && io.push.bits =/= 0.U)){
+//  printf("RAS push 0")
 //}
   override def desiredName = if (tapeout) ysyxid + "_" + getClassName else getClassName
 

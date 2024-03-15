@@ -232,3 +232,37 @@ trait util_function {
   }
 
 }
+
+object Assert extends RVNoobModeConfig {
+
+  class DpiAssert extends BlackBox {
+    val io = IO(new Bundle {
+      val clock  = Input(Clock())
+      val reset  = Input(Reset())
+      val en = Input(Bool())
+    })
+
+  }
+
+  object DpiAssert {
+    def apply(
+      clock:  Clock,
+      reset:  Reset,
+      en: Bool
+    ): DpiAssert = {
+      val u_assert = Module(new DpiAssert)
+      u_assert.io.clock  <> clock
+      u_assert.io.reset  <> reset
+      u_assert.io.en <> en
+      u_assert
+    }
+  }
+
+  def apply(clock: Clock, reset: Reset, cond: Bool, message: String, data: Bits*): Any = {
+    DpiAssert(clock, reset, !cond)
+    when(!cond) {
+//      printf(message, data)
+    }
+  }
+
+}

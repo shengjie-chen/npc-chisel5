@@ -14,14 +14,14 @@
 #define CONFIG_FSTWAVE
 // #define SOC_SIM
 
-#define CONFIG_ITRACE
-#define CONFIG_FTRACE
-#define CONFIG_MTRACE
+// #define CONFIG_ITRACE
+// #define CONFIG_FTRACE
+// #define CONFIG_MTRACE
 
 #define SPMU_ENABLE
 
 #ifdef SPMU_ENABLE
-#define RAS_SPMU
+// #define RAS_SPMU
 #endif
 
 #define CONFIG_DIFFTEST
@@ -29,8 +29,8 @@
 
 // #define SIM_TIME_MAX 100000
 
-#define CONFIG_DUMPWAVE
-#define CONFIG_DUMPSTART 0
+// #define CONFIG_DUMPWAVE
+// #define CONFIG_DUMPSTART 0
 // #define CONFIG_DUMPSTART 40000000
 
 

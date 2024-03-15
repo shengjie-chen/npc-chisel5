@@ -137,7 +137,7 @@ split_verilog:
 	done
 
 verilog_post_processing:
-	@sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/`ifndef/,/`endif/d;/`endif/d' $(VPPFILE)
+	@#sed -i '/initial begin/,/end /d;/`ifdef/,/`endif/d;/`ifndef/,/`endif/d;/`endif/d' $(VPPFILE)
 	@sed -i '/firrtl_black_box_resource_files.f/, $$d' $(VPPFILE)
 	@sed -i '/^\/\//d' $(VPPFILE)
 	@sed -i '/^$$/N;/^\n$$/D' $(VPPFILE)
