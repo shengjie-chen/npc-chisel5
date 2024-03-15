@@ -321,10 +321,10 @@ class DCache(
   io.axi_wctrl.en := mmio_write_valid || riseEdge(replace_axi_write)
   io.axi_wctrl.id := deviceId.U
   val wbuf_ready = RegInit(0.B)
-  when(mmio_write_valid || into_replace_r) {
-    wbuf_ready := 1.B
-  }.elsewhen(pmem_write_ok) {
+  when(pmem_write_ok){
     wbuf_ready := 0.B
+  }.elsewhen(mmio_write_valid || into_replace_r){
+    wbuf_ready := 1.B
   }
   io.axi_wctrl.wbuf_ready := wbuf_ready || mmio_write_valid
   when(mmio_write) {

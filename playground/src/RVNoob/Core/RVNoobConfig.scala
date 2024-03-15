@@ -84,7 +84,7 @@ trait BranchConfig {
   val BTBSet         = pow(2, BTBSetWidth).toInt
   val BTBWay         = 2 // support 1 or 2
   val BTBTagWidth    = 11
-  val BTBBtaComWidth = 0 // when way > 1, the width of the common part of bta
+  val BTBBtaComWidth = 12 // when way > 1, the width of the common part of bta
   val br_type_id     = Map("call" -> 0, "return" -> 1, "taken_br" -> 2, "typeb" -> 3, "not_br" -> 4, "intr" -> 5)
 
   val PhtAddrWidth = 5
