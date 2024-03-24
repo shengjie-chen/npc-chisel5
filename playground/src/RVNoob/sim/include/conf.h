@@ -24,7 +24,7 @@
 // #define RAS_SPMU
 #endif
 
-#define CONFIG_DIFFTEST
+// #define CONFIG_DIFFTEST
 // #define CONFIG_DIFFTEST_REF_MEM_POINT
 
 // #define SIM_TIME_MAX 100000

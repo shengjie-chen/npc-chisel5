@@ -321,9 +321,9 @@ class DCache(
   io.axi_wctrl.en := mmio_write_valid || riseEdge(replace_axi_write)
   io.axi_wctrl.id := deviceId.U
   val wbuf_ready = RegInit(0.B)
-  when(pmem_write_ok){
+  when(pmem_write_ok) {
     wbuf_ready := 0.B
-  }.elsewhen(mmio_write_valid || into_replace_r){
+  }.elsewhen(mmio_write_valid || into_replace_r) {
     wbuf_ready := 1.B
   }
   io.axi_wctrl.wbuf_ready := wbuf_ready || mmio_write_valid
@@ -555,9 +555,6 @@ object DCache extends RVNoobConfig {
       //      cache.io.in_valid      := 1.B
       cache.io.fencei := 0.B
     } else {
-      if (simplify_design) {
-        cache.io.fencei := 0.B
-      }
       cache.io.inpmem_stop := 0.B
     }
     cache

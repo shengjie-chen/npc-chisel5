@@ -8,10 +8,9 @@ import scala.math.pow
 trait RVNoobModeConfig {
   // type : 0 - sim; 1 - tapeout; 2 - fpga
   val fpga:            Boolean = false
-  val tapeout:         Boolean = true
-  val spmu_en:         Boolean = false
+  val tapeout:         Boolean = false
+  val spmu_en:         Boolean = true
   val soc_sim:         Boolean = false
-  val simplify_design: Boolean = !tapeout && !soc_sim
   require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
   if (tapeout) {
     require(!spmu_en, "spmu_en must be false when tapeout is true")
@@ -56,8 +55,9 @@ trait RVNoobMemMap extends RVNoobModeConfig {
       )
     else if (soc_sim)
       Map(
-        "sram" -> (0x0f000000L.U, 0x0f001fffL.U),
-        "mrom" -> (0x02000000L.U, 0x02000fffL.U)
+        "clint" -> (0x02000000L.U, 0x0200ffffL.U),
+        "sram"  -> (0x0f000000L.U, 0x0f001fffL.U),
+        "mrom"  -> (0x02000000L.U, 0x02000fffL.U)
       )
     else
       Map(
@@ -237,23 +237,23 @@ object Assert extends RVNoobModeConfig {
 
   class DpiAssert extends BlackBox {
     val io = IO(new Bundle {
-      val clock  = Input(Clock())
-      val reset  = Input(Reset())
-      val en = Input(Bool())
+      val clock = Input(Clock())
+      val reset = Input(Reset())
+      val en    = Input(Bool())
     })
 
   }
 
   object DpiAssert {
     def apply(
-      clock:  Clock,
-      reset:  Reset,
-      en: Bool
+      clock: Clock,
+      reset: Reset,
+      en:    Bool
     ): DpiAssert = {
       val u_assert = Module(new DpiAssert)
-      u_assert.io.clock  <> clock
-      u_assert.io.reset  <> reset
-      u_assert.io.en <> en
+      u_assert.io.clock <> clock
+      u_assert.io.reset <> reset
+      u_assert.io.en    <> en
       u_assert
     }
   }

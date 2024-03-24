@@ -15,6 +15,7 @@
 build/
 !mill
 !wavefile
+!*.py
 out/
 .bsp/
 .idea/

@@ -103,7 +103,7 @@ update_config_spmu:
     		echo -e "\n[scala config]: SPMU set to true"; \
     fi
 
-ifeq ($(TOPNAME), RVNoobSim)
+ifeq ($(PRJNAME), RVNoobSim)
 update_config: update_config_spmu
 	@sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	@echo "[scala config]: tapeout set to false"
@@ -145,7 +145,7 @@ verilog_post_processing:
 
 
 
-ifeq ($(TOPNAME), RVNoobTile)
+ifeq ($(PRJNAME), ysyxSoCFull)
 TOPNAME:=ysyx_22040495
 endif
 WAVE_SAVE_FILE = wavefile/soc/init.gtkw

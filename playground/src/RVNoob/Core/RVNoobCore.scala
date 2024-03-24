@@ -9,7 +9,7 @@ import chisel3.util._
 
 import scala.math.pow
 
-class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobMemMap{
+class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobMemMap {
   val io = IO(new Bundle {
     val axi_pc = if (!tapeout && !soc_sim) Some(Output(UInt(addr_w.W))) else None
 
@@ -166,9 +166,9 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobM
 
   if (tapeout) {
     pc := Mux(pc_reset || reset.asBool, 0x30000000L.U(addr_w.W), Mux(pc_en, npc, pc))
-  } else if(soc_sim){
+  } else if (soc_sim) {
     pc := Mux(pc_reset || reset.asBool, 0x20000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
-  } else{
+  } else {
     pc := Mux(pc_reset || reset.asBool, 0x80000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
   }
   npc      := Mux(pre_dnpc_en, pre_dnpc, npc_t)
@@ -290,10 +290,8 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobM
   dcache.io.wen        <> mem_reg.out.mem_ctrl.w_pmem
   dcache.io.wdata      <> mem_reg.out.src2
   dcache.io.zero_ex_op <> mem_reg.out.mem_ctrl.zero_ex_op
-  if (!simplify_design) {
-    dcache.io.fencei <> mem_reg.out.mem_ctrl.fencei
-  }
-  dcache.io.in_valid <> mem_reg.out.valid
+  dcache.io.fencei     <> mem_reg.out.mem_ctrl.fencei
+  dcache.io.in_valid   <> mem_reg.out.valid
   if (fpga) {
     dcache.io.bram.get <> io.d_bram.get
   } else {
@@ -303,68 +301,52 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobM
     dcache.io.sram.get(3) <> io.sram7.get
   }
 
-  if (simplify_design) {
+  def axictrl_connect_zero(rctrl: AxiReadCtrlIO, wctrl: AxiWriteCtrlIO): Unit = {
+    wctrl.en         := 0.U.asTypeOf(wctrl.en)
+    wctrl.id         := 0.U.asTypeOf(wctrl.id)
+    wctrl.size       := 0.U.asTypeOf(wctrl.size)
+    wctrl.wbuf_ready := 0.U.asTypeOf(wctrl.wbuf_ready)
+    wctrl.burst      := 0.U.asTypeOf(wctrl.burst)
+    wctrl.addr       := 0.U.asTypeOf(wctrl.addr)
+    wctrl.len        := 0.U.asTypeOf(wctrl.len)
+    wctrl.data       := 0.U.asTypeOf(wctrl.data)
+    wctrl.strb       := 0.U.asTypeOf(wctrl.strb)
+
+    rctrl.en    := 0.U.asTypeOf(rctrl.en)
+    rctrl.id    := 0.U.asTypeOf(rctrl.id)
+    rctrl.size  := 0.U.asTypeOf(rctrl.size)
+    rctrl.addr  := 0.U.asTypeOf(rctrl.addr)
+    rctrl.burst := 0.U.asTypeOf(rctrl.burst)
+    rctrl.len   := 0.U.asTypeOf(rctrl.len)
+  }
+//    val clint_address = (0x02000000L.U, 0x0200ffff.U)
+  val clint_address = mem_map("clint")
+  def inclint(addr: UInt): Bool = {
+    addr >= clint_address._1 && addr <= clint_address._2
+  }
+
+  when(
+    (inclint(dcache.io.axi_rctrl.addr) && dcache.io.axi_rctrl.en) ||
+      (inclint(dcache.io.axi_wctrl.addr) && dcache.io.axi_wctrl.en)
+  ) {
+    clint.io.wctrl <> dcache.io.axi_wctrl
+    clint.io.rctrl <> dcache.io.axi_rctrl
+    axictrl_connect_zero(axi_crossbar.in2.rctrl, axi_crossbar.in2.wctrl)
+  }.otherwise {
     axi_crossbar.in2.rctrl <> dcache.io.axi_rctrl
     axi_crossbar.in2.wctrl <> dcache.io.axi_wctrl
-
-    clint.io.wctrl             <> 0.U.asTypeOf(clint.io.wctrl)
-    clint.io.rctrl             <> 0.U.asTypeOf(clint.io.rctrl)
-    clint.io.mstatus_mie       <> 0.U.asTypeOf(clint.io.mstatus_mie)
-    clint.io.mie_mtie          <> 0.U.asTypeOf(clint.io.mie_mtie)
-    clint.io.id_reg_pc         <> 0.U.asTypeOf(clint.io.id_reg_pc)
-    clint.io.mem_B_en          <> 0.U.asTypeOf(clint.io.mem_B_en)
-    clint.io.ex_is_branch_inst <> 0.U.asTypeOf(clint.io.ex_is_branch_inst)
-    clint.io.ex_csr_wen        <> 0.U.asTypeOf(clint.io.ex_csr_wen)
-    clint.io.mem_csr_wen       <> 0.U.asTypeOf(clint.io.mem_csr_wen)
-    clint.io.miss              <> 0.U.asTypeOf(clint.io.miss)
-  } else {
-    def axictrl_connect_zero(rctrl: AxiReadCtrlIO, wctrl: AxiWriteCtrlIO): Unit = {
-      wctrl.en         := 0.U.asTypeOf(wctrl.en)
-      wctrl.id         := 0.U.asTypeOf(wctrl.id)
-      wctrl.size       := 0.U.asTypeOf(wctrl.size)
-      wctrl.wbuf_ready := 0.U.asTypeOf(wctrl.wbuf_ready)
-      wctrl.burst      := 0.U.asTypeOf(wctrl.burst)
-      wctrl.addr       := 0.U.asTypeOf(wctrl.addr)
-      wctrl.len        := 0.U.asTypeOf(wctrl.len)
-      wctrl.data       := 0.U.asTypeOf(wctrl.data)
-      wctrl.strb       := 0.U.asTypeOf(wctrl.strb)
-
-      rctrl.en    := 0.U.asTypeOf(rctrl.en)
-      rctrl.id    := 0.U.asTypeOf(rctrl.id)
-      rctrl.size  := 0.U.asTypeOf(rctrl.size)
-      rctrl.addr  := 0.U.asTypeOf(rctrl.addr)
-      rctrl.burst := 0.U.asTypeOf(rctrl.burst)
-      rctrl.len   := 0.U.asTypeOf(rctrl.len)
-    }
-
-//    val clint_address = (0x02000000L.U, 0x0200ffff.U)
-    val clint_address = mem_map("clint")
-    def inclint(addr: UInt): Bool = {
-      addr >= clint_address._1 && addr <= clint_address._2
-    }
-
-    when(
-      (inclint(dcache.io.axi_rctrl.addr) && dcache.io.axi_rctrl.en) ||
-        (inclint(dcache.io.axi_wctrl.addr) && dcache.io.axi_wctrl.en)
-    ) {
-      clint.io.wctrl <> dcache.io.axi_wctrl
-      clint.io.rctrl <> dcache.io.axi_rctrl
-      axictrl_connect_zero(axi_crossbar.in2.rctrl, axi_crossbar.in2.wctrl)
-    }.otherwise {
-      axi_crossbar.in2.rctrl <> dcache.io.axi_rctrl
-      axi_crossbar.in2.wctrl <> dcache.io.axi_wctrl
-      axictrl_connect_zero(clint.io.rctrl, clint.io.wctrl)
-    }
-
-    clint.io.mstatus_mie       <> csr.io.mstatus_mie
-    clint.io.mie_mtie          <> csr.io.mie_mtie
-    clint.io.id_reg_pc         <> id_reg.out.pc
-    clint.io.mem_B_en          <> mem_reg.out.B_en
-    clint.io.ex_is_branch_inst <> ex_reg.out.exe_ctrl.is_branch_inst
-    clint.io.ex_csr_wen        <> ex_reg.out.wb_csr_ctrl.csr_wen
-    clint.io.mem_csr_wen       <> mem_reg.out.wb_csr_ctrl.csr_wen
-    clint.io.miss              <> (cache_miss || exe.io.waiting)
+    axictrl_connect_zero(clint.io.rctrl, clint.io.wctrl)
   }
+
+  clint.io.mstatus_mie       <> csr.io.mstatus_mie
+  clint.io.mie_mtie          <> csr.io.mie_mtie
+  clint.io.id_reg_pc         <> id_reg.out.pc
+  clint.io.mem_B_en          <> mem_reg.out.B_en
+  clint.io.ex_is_branch_inst <> ex_reg.out.exe_ctrl.is_branch_inst
+  clint.io.ex_csr_wen        <> ex_reg.out.wb_csr_ctrl.csr_wen
+  clint.io.mem_csr_wen       <> mem_reg.out.wb_csr_ctrl.csr_wen
+  clint.io.miss              <> (cache_miss || exe.io.waiting)
+
   axi_crossbar.in1.rctrl <> icache.io.axi_rctrl
   axi_crossbar.in1.wctrl <> icache.io.axi_wctrl
   axi_crossbar.in1.pc    <> pc
