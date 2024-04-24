@@ -14,7 +14,7 @@ uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 /// @return
 uint8_t *guest_to_host(paddr_t paddr) {
 #ifdef SOC_SIM
-    if (likely(in_mrom(addr)))
+    if (likely(in_mrom(paddr)))
         return mrom + paddr - MROM_PORT;
     else
         Assert(0, "paddr = %x, out of bound!\n", paddr);

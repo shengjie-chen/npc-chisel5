@@ -17,12 +17,12 @@
 
 #include "common.h"
 #include "device/device.h"
-#include "utils/difftest.h"
 #include "memory/memory.h"
 #include "trace/trace.h"
 #include "utils/cpudpi.h"
-#include "utils/spmu.h"
+#include "utils/difftest.h"
 #include "utils/sdb.h"
+#include "utils/spmu.h"
 
 extern "C" void init_disasm(const char *triple);
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
@@ -136,12 +136,14 @@ void one_clock() {
 }
 
 int main(int argc, char **argv, char **env) {
+    printf("\n###### SIM Begin ######\n");
+
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 #ifdef CONFIG_DUMPWAVE
     top->trace(tfp, 99);
     tfp->open(WAVE_FILE);
-	Assert(tfp != NULL, "open wave file failed\n");
+    Assert(tfp != NULL, "open wave file failed\n");
 #endif
     clock_t start, end;
     start = clock();
@@ -153,12 +155,12 @@ int main(int argc, char **argv, char **env) {
 #ifdef CONFIG_ITRACE
     init_disasm("riscv64-pc-linux-gnu");
     itrace_fp = fopen(itrace_file, "w+");
-	Assert(itrace_fp != NULL, "open itrace_file failed\n");
+    Assert(itrace_fp != NULL, "open itrace_file failed\n");
     printf("[ log ] Inst Trace Log is written to %s\n", itrace_file);
 #endif
 #ifdef CONFIG_MTRACE
     mtrace_fp = fopen(mtrace_file, "w");
-	Assert(mtrace_fp != NULL, "open mtrace_file failed\n");
+    Assert(mtrace_fp != NULL, "open mtrace_file failed\n");
     printf("[ log ] Mem Trace Log is written to %s\n", mtrace_file);
 #endif
 
