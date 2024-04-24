@@ -10,7 +10,7 @@ trait RVNoobModeConfig {
   val fpga:            Boolean = false
   val tapeout:         Boolean = false
   val spmu_en:         Boolean = true
-  val soc_sim:         Boolean = false
+  val soc_sim:         Boolean = true
   require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
   if (tapeout) {
     require(!spmu_en, "spmu_en must be false when tapeout is true")
@@ -26,10 +26,10 @@ trait RVNoobConfig extends util_function with BranchConfig with RVNoobModeConfig
   val gpr_addr_w = 5
   val addr_w     = 32
 
-//  val ICacheSize = 1
-//  val DCacheSize = 0.5
-  val ICacheSize = 4
-  val DCacheSize = 4
+ val ICacheSize = 1
+ val DCacheSize = 0.5
+//   val ICacheSize = 4
+//   val DCacheSize = 4
 
   val ysyxid = "ysyx_22040495"
   def getClassName: String = this.getClass.toString.split("\\.").last
@@ -56,7 +56,7 @@ trait RVNoobMemMap extends RVNoobModeConfig {
     else if (soc_sim)
       Map(
         "clint" -> (0x02000000L.U, 0x0200ffffL.U),
-        "sram"  -> (0x0f000000L.U, 0x0f001fffL.U),
+        "sram"  -> (0x0f000000L.U, 0x0fffffffL.U),
         "mrom"  -> (0x02000000L.U, 0x02000fffL.U)
       )
     else

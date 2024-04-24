@@ -155,22 +155,22 @@ char *mrom_file = NULL;
 
 uint8_t mrom[MROM_SIZE] = {};
 
-// size_t init_mrom(const char *mrom_file) {
-//     FILE *fp = fopen(mrom_file, "rb");
-//     if (fp == NULL) {
-//         printf("mrom file not found\n");
-//         exit(1);
-//     }
+size_t init_mrom(const char *mrom_file) {
+    FILE *fp = fopen(mrom_file, "rb");
+    if (fp == NULL) {
+        printf("mrom file not found\n");
+        exit(1);
+    }
 
-//     fseek(fp, 0, SEEK_END);
-//     size_t size = ftell(fp);
-//     printf("mrom file loaded, size = 0x%lx Byte\n", size);
-//     fseek(fp, 0, SEEK_SET);
-//     int ret = fread(mrom, size, 1, fp);
-//     assert(ret == 1);
-//     fclose(fp);
-//     return size;
-// }
+    fseek(fp, 0, SEEK_END);
+    size_t size = ftell(fp);
+    printf("mrom file loaded, size = 0x%lx Byte\n", size);
+    fseek(fp, 0, SEEK_SET);
+    int ret = fread(mrom, size, 1, fp);
+    assert(ret == 1);
+    fclose(fp);
+    return size;
+}
 
 extern "C" void mrom_read(uint32_t addr, uint32_t *data) {
     uint32_t offset = (addr - 0x20000000) & ~0x3;

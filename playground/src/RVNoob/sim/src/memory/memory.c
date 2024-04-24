@@ -9,6 +9,12 @@ extern vluint64_t main_time;
 char *img_file = NULL;
 uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 
+bool in_pmem(paddr_t addr) { return (addr >= CONFIG_MBASE) && (addr - CONFIG_MSIZE < (paddr_t)CONFIG_MBASE); }
+#ifdef SOC_SIM
+static inline bool in_mrom(paddr_t addr) { return (addr >= MROM_PORT) && (addr - MROM_SIZE < (paddr_t)MROM_PORT); }
+static inline bool in_sram(paddr_t addr) { return (addr >= SRAM_PORT) && (addr - SRAM_SIZE < (paddr_t)SRAM_PORT); }
+#endif
+
 /// @brief 将客户地址向主机地址转换-----地址可以分为客户地址（npc地址，通常是0x800...）和主机地址（实际地址）
 /// @param paddr
 /// @return
@@ -85,12 +91,6 @@ word_t pmem_read(paddr_t addr, int len) {
 }
 
 void pmem_write(paddr_t addr, int len, word_t data) { host_write(guest_to_host(addr), len, data); }
-
-bool in_pmem(paddr_t addr) { return (addr >= CONFIG_MBASE) && (addr - CONFIG_MSIZE < (paddr_t)CONFIG_MBASE); }
-#ifdef SOC_SIM
-static inline bool in_mrom(paddr_t addr) { return (addr >= MROM_PORT) && (addr - MROM_SIZE < (paddr_t)MROM_PORT); }
-static inline bool in_sram(paddr_t addr) { return (addr >= SRAM_PORT) && (addr - SRAM_SIZE < (paddr_t)SRAM_PORT); }
-#endif
 
 /// @brief dpi函数用于读任意有效地址
 /// @param raddr

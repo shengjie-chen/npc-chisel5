@@ -63,7 +63,7 @@ endif
 
 ### FLAGS for verilator
 # VERILATOR_FLAGS += -MMD --build -cc -O3 --x-assign fast --x-initial fast --noassert --autoflush
-# VERILATOR_FLAGS += --autoflush
+VERILATOR_FLAGS += --autoflush
 VERILATOR_FLAGS += -cc --exe --build
 VERILATOR_FLAGS += -O3 --timescale "1ns/1ns" --no-timing
 ifeq ($(PLATFORM), npcsoc)

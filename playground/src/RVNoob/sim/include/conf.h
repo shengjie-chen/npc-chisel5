@@ -12,7 +12,7 @@
 
 // ---------------------------->switch
 #define CONFIG_FSTWAVE
-// #define SOC_SIM
+#define SOC_SIM
 
 // #define CONFIG_ITRACE
 // #define CONFIG_FTRACE

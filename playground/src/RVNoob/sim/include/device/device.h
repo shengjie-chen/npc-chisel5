@@ -63,7 +63,7 @@ void i8042_data_io_handler();
 
 #ifdef SOC_SIM
 extern char *mrom_file;
-extern uint32_t mrom[1024];
+extern uint8_t mrom[MROM_SIZE];
 size_t init_mrom(const char* mrom_file);
 #endif
 

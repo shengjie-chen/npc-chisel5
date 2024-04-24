@@ -224,11 +224,11 @@ int main(int argc, char **argv, char **env) {
     }
 #endif
 
-	// if(argc > 5){
-	// 	mrom_file = *(argv + 5);
-	// 	printf("mrom software: %s\n", mrom_file);
-	// 	init_mrom(mrom_file);
-	// }
+    if (argc > 5) {
+        mrom_file = *(argv + 5);
+        printf("mrom software: %s\n", mrom_file);
+        init_mrom(mrom_file);
+    }
 
     // printf("%s\n",*(argv + 2));
     // printf("%d\n",sdb_en);
