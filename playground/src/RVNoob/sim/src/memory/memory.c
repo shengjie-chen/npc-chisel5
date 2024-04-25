@@ -85,6 +85,8 @@ void host_write(void *addr, int len, word_t data) {
     }
 }
 
+#ifndef SOC_SIM
+
 word_t pmem_read(paddr_t addr, int len) {
     word_t ret = host_read(guest_to_host(addr), len);
     return ret;
@@ -217,3 +219,5 @@ extern "C" void pmem_write_dpi(long long waddr, long long wdata, char wmask, lon
         }
     }
 }
+
+#endif

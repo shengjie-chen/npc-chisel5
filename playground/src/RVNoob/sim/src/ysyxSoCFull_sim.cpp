@@ -164,8 +164,8 @@ int main(int argc, char **argv, char **env) {
     printf("[ log ] Mem Trace Log is written to %s\n", mtrace_file);
 #endif
 
-    init_i8042();
-    init_vga();
+    // init_i8042();
+    // init_vga();
 
     npc_state.state = NPC_RUNNING;
 
@@ -218,17 +218,17 @@ int main(int argc, char **argv, char **env) {
     }
     if (elf_en) {
         elf_file = *(argv + 3) + 4;
-        printf("pmem software: %s\n", elf_file);
+        printf("mrom software: %s\n", elf_file);
         printf("[ log ] Function Trace Log is written to %s\n", ftrace_file);
         init_ftrace(elf_file);
     }
 #endif
 
-    if (argc > 5) {
-        mrom_file = *(argv + 5);
-        printf("mrom software: %s\n", mrom_file);
-        init_mrom(mrom_file);
-    }
+    // if (argc > 5) {
+    //     mrom_file = *(argv + 5);
+    //     printf("mrom software: %s\n", mrom_file);
+    //     init_mrom(mrom_file);
+    // }
 
     // printf("%s\n",*(argv + 2));
     // printf("%d\n",sdb_en);
