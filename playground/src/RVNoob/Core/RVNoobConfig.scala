@@ -7,10 +7,10 @@ import scala.math.pow
 
 trait RVNoobModeConfig {
   // type : 0 - sim; 1 - tapeout; 2 - fpga
-  val fpga:            Boolean = false
-  val tapeout:         Boolean = false
-  val spmu_en:         Boolean = true
-  val soc_sim:         Boolean = true
+  val fpga:    Boolean = false
+  val tapeout: Boolean = false
+  val spmu_en: Boolean = true
+  val soc_sim: Boolean = true
   require(!(tapeout && soc_sim), "tapout and soc_sim can't be true at the same time")
   if (tapeout) {
     require(!spmu_en, "spmu_en must be false when tapeout is true")
@@ -26,8 +26,8 @@ trait RVNoobConfig extends util_function with BranchConfig with RVNoobModeConfig
   val gpr_addr_w = 5
   val addr_w     = 32
 
- val ICacheSize = 1
- val DCacheSize = 0.5
+  val ICacheSize = 1
+  val DCacheSize = 0.5
 //   val ICacheSize = 4
 //   val DCacheSize = 4
 

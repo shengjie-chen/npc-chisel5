@@ -40,6 +40,7 @@ ifeq ($(PLATFORM), npcsoc)
 VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/perip) -name  "*.v")# add soc verilog file
 VSRCS += $(shell find $(abspath $(YSYXSOC_HOME)/build) -name  "$(SIMTOPNAME).v")# add soc verilog file
 endif
+SCALASRCS = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "*.scala")
 RVNoob_CONFIG = $(shell find $(abspath $(SRC_CODE_DIR)) -name  "RVNoobConfig.scala")
 
 ### project software source
@@ -89,8 +90,20 @@ ifeq ($(PLATFORM), npcsoc)
 ARGS += $(TEST_DIR)/char-test.bin
 endif
 
+### useful function
+define replace_if_matched
+$(eval MATCHED := $(shell grep -q '$2' '$1' && echo yes || echo no))
+ifeq ($(MATCHED),yes)
+$(info Match found, replacing in file '$1')
+$(shell sed -i 's/$2/$3/g' '$1')
+else
+$(info No match found in file '$1')
+endif
+endef
+
 echo_val:
-	@echo PLATFORM:$(PLATFORM)
+	@echo PLATFORM:$(PLATFORM)SCALASRCS
+	@echo SCALASRCS:$(SCALASRCS)
 	@echo SRC_CODE_DIR:$(SRC_CODE_DIR)
 	@echo GEN_DIR:$(GEN_DIR)
 	@echo OBJ_DIR:$(OBJ_DIR)
@@ -109,41 +122,69 @@ tapeout:
 	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
 	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
 
+define replace_pattern
+    temp_file := $(shell mktemp)
+
+    search_pattern := $(2)
+    replace_text := $(3)
+
+    has_match := $(shell grep -q $(search_pattern) $(1) && echo yes || echo no)
+
+    ifeq ($(has_match),yes)
+        sed "/$(search_pattern)/c\\$(replace_text)" $(1) > $(temp_file)
+        mv $(temp_file) $(1)
+    endif
+
+    ifneq ($(wildcard $(temp_file)),)
+        rm $(temp_file)
+    endif
+endef
+
 ### >>>>>>>>>>>>>>>> general sim project
 update_config_spmu:
 	@if grep -q "//\s*#define SPMU_ENABLE" $(SIM_CONFIG); then \
+		echo -e "\n[scala config]: SPMU set to false"; \
+		if grep -q "val spmu_en: *Boolean = true" $(RVNoob_CONFIG); then \
     		sed -i 's/\(val spmu_en: *Boolean = \)true/\1false/' $(RVNoob_CONFIG); \
-    		echo -e "\n[scala config]: SPMU set to false"; \
+		fi \
     else \
+    	echo -e "\n[scala config]: SPMU set to true"; \
+		if grep -q "val spmu_en: *Boolean = false" $(RVNoob_CONFIG); then \
     		sed -i 's/\(val spmu_en: *Boolean = \)false/\1true/' $(RVNoob_CONFIG); \
-    		echo -e "\n[scala config]: SPMU set to true"; \
+		fi \
     fi
 
 ifeq ($(PLATFORM), npc)
-update_config: update_config_spmu
-	@sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
-	@echo "[scala config]: tapeout set to false"
-	@sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
-	@echo "[scala config]: soc_sim set to false"
+update_config_soc:
+	@if grep -q "val soc_sim: *Boolean = true" $(RVNoob_CONFIG); then \
+    	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/' $(RVNoob_CONFIG); \
+	fi
+    @echo -e "[scala config]: soc_sim set to false";
 	@sed -i 's/^\s*#define SOC_SIM/\/\/ #define SOC_SIM/g' $(SIM_CONFIG)
-	@echo -e "[C++ config]: SOC_SIM set to false\n"
+	@echo -e "[C++   config]: SOC_SIM set to false\n"
 
 socgen:
 
 else
-update_config: update_config_spmu
-	@sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
-	@echo "[scala config]: tapeout set to false"
-	@sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/g' $(RVNoob_CONFIG)
-	@echo "[scala config]: soc_sim set to true"
-	@sed -i 's/^\s*#define CONFIG_DIFFTEST/\/\/ #define CONFIG_DIFFTEST/g' $(SIM_CONFIG)
-	@echo "[C++ config]: CONFIG_DIFFTEST set to false"
+update_config_soc:
+	@if grep -q "val soc_sim: *Boolean = false" $(RVNoob_CONFIG); then \
+   		sed -i 's/\(val soc_sim: *Boolean = \)false/\1true/' $(RVNoob_CONFIG); \
+	fi
+	@echo -e "[scala config]: soc_sim set to true";
 	@sed -i 's/^\s*\/\/\s*#define SOC_SIM/#define SOC_SIM/g' $(SIM_CONFIG)
-	@echo -e "[C++ config]: SOC_SIM set to true\n"
+	@echo -e "[C++   config]: SOC_SIM set to true"
+	@sed -i 's/^\s*#define CONFIG_DIFFTEST/\/\/ #define CONFIG_DIFFTEST/g' $(SIM_CONFIG)
+	@echo "[C++   config]: CONFIG_DIFFTEST set to false"
 
 socgen:
 	make -C $(YSYXSOC_HOME) verilog
 endif	
+
+update_config: update_config_spmu update_config_soc
+	@if grep -q "val tapeout: *Boolean = true" $(RVNoob_CONFIG); then \
+		sed -i 's/\(val tapeout: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG); \
+	fi
+	@echo "[scala config]: tapeout set to false"
 
 ### 将一个总的verilog拆分到多个verilog子文件
 VPPFILE ?= $(VERILOG_OBJ_DIR)/$(GENTOPNAME).v
@@ -164,13 +205,15 @@ GENTOPNAME:=ysyx_22040495
 endif
 WAVE_SAVE_FILE = wavefile/soc/init.gtkw
 
-verilog: update_config socgen
+verilog: $(VERILOG_OBJ_DIR)/$(GENTOPNAME).v
+
+$(VERILOG_OBJ_DIR)/$(GENTOPNAME).v: $(SCALASRCS)
 	rm -rf $(VERILOG_OBJ_DIR)
 	mkdir -p $(VERILOG_OBJ_DIR)
 	./mill -i __.test.runMain $(PACKAGE).$(TOPMODULE_GEN) -td $(VERILOG_OBJ_DIR)
 	make verilog_post_processing VPPFILE=$(VERILOG_OBJ_DIR)/$(GENTOPNAME).v
 
-sim_npc_vcd: verilog
+sim_npc_vcd: update_config socgen verilog
 	mkdir -p $(OBJ_DIR)
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
@@ -180,7 +223,7 @@ sim_npc_vcd: verilog
 	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
 
-sim_npc_vcd_without_gtk: verilog
+sim_npc_vcd_without_gtk: update_config socgen verilog
 	mkdir -p $(OBJ_DIR)
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) \
@@ -189,7 +232,7 @@ sim_npc_vcd_without_gtk: verilog
 		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILATOR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
 
-sim_npc_vcd_without_regen: update_config
+sim_npc_vcd_without_regen: update_config socgen
 	mkdir -p $(OBJ_DIR)
 	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator -$(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
@@ -199,7 +242,7 @@ sim_npc_vcd_without_regen: update_config
 	$(SIM_BIN) $(IMG) $(ARGS)
 	gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
 
-sim_npc_vcd_without_regen_gtk: update_config
+sim_npc_vcd_without_regen_gtk: update_config socgen
 	mkdir -p $(OBJ_DIR)
 	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) \
