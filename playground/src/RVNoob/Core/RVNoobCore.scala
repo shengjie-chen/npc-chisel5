@@ -400,7 +400,7 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobM
 
     // >>>>>>>>>>>>>> ipc <<<<<<<<<<<<<<
     val inst_cnt = RegInit(0.U(xlen.W))
-    inst_cnt := inst_cnt + wb_reg.out.inst_valid.asUInt
+    inst_cnt := inst_cnt + (wb_reg.out.inst_valid && wb_reg.out.valid).asUInt
 
     // >>>>>>>>>>>>>> Difftest <<<<<<<<<<<<<<
     val cache_miss_last_next = !cache_miss && RegNext(cache_miss)
