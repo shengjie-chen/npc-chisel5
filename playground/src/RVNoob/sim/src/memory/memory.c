@@ -23,7 +23,7 @@ uint8_t *guest_to_host(paddr_t paddr) {
     if (likely(in_mrom(paddr)))
         return mrom + paddr - MROM_PORT;
     else
-        Assert(0, "paddr = %x, out of bound!\n", paddr);
+        Assert(0, "paddr = %lx, out of bound!\n", paddr);
 #else
     return pmem + paddr - CONFIG_MBASE;
 #endif

@@ -178,7 +178,7 @@ extern "C" void mrom_read(uint32_t addr, uint32_t *data) {
     *data = *(uint32_t *)(mrom + offset);
 #ifdef CONFIG_MTRACE
     fprintf(mtrace_fp, "read  mrom ## addr: %llx", addr & ~0x3ull);
-    fprintf(mtrace_fp, " -> 0x%016llx \n", *data);
+    fprintf(mtrace_fp, " -> 0x%016x \n", *data);
 #endif
 }
 #endif

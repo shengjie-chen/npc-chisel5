@@ -191,7 +191,7 @@ int main(int argc, char **argv, char **env) {
     // parse_args
     bool sdb_en = 0;
     if (argc > 2) {
-        sdb_en = ~strcmp(*(argv + 2), "sdb_y");
+        sdb_en = ~strcmp(*(argv + 2), "sdb=yes");
     }
 
 #ifdef CONFIG_DIFFTEST

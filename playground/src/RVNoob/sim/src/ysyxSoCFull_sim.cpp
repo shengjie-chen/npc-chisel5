@@ -149,6 +149,13 @@ int main(int argc, char **argv, char **env) {
     start = clock();
 
     img_file = *(argv + 1);
+    bool other_load = false;
+    if (argc > 5) {
+        other_load = ~strncmp(*(argv + 5), "load=", 5);
+        if (other_load) {
+            img_file = *(argv + 5) + 5;
+        }
+    }
     printf("load img_file: %s\n", img_file);
     long img_size = load_img();
 
@@ -191,7 +198,7 @@ int main(int argc, char **argv, char **env) {
     // parse_args
     bool sdb_en = 0;
     if (argc > 2) {
-        sdb_en = ~strcmp(*(argv + 2), "sdb_y");
+        sdb_en = ~strcmp(*(argv + 2), "sdb=yes");
     }
 
 #ifdef CONFIG_DIFFTEST

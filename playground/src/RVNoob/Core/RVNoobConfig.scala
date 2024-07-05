@@ -26,10 +26,10 @@ trait RVNoobConfig extends util_function with BranchConfig with RVNoobModeConfig
   val gpr_addr_w = 5
   val addr_w     = 32
 
-  val ICacheSize = 1
-  val DCacheSize = 0.5
-//   val ICacheSize = 4
-//   val DCacheSize = 4
+//   val ICacheSize = 1
+//   val DCacheSize = 0.5
+  val ICacheSize = 4
+  val DCacheSize = 4
 
   val ysyxid = "ysyx_22040495"
   def getClassName: String = this.getClass.toString.split("\\.").last
@@ -57,7 +57,7 @@ trait RVNoobMemMap extends RVNoobModeConfig {
       Map(
         "clint" -> (0x02000000L.U, 0x0200ffffL.U),
         "sram"  -> (0x0f000000L.U, 0x0fffffffL.U),
-        "mrom"  -> (0x02000000L.U, 0x02000fffL.U)
+        "mrom"  -> (0x20000000L.U, 0x20000fffL.U)
       )
     else
       Map(

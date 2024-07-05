@@ -70,6 +70,12 @@ VERILATOR_FLAGS += -O3 --timescale "1ns/1ns" --no-timing
 ifeq ($(PLATFORM), npcsoc)
 VERILATOR_FLAGS += -I$(YSYXSOC_HOME)/perip/uart16550/rtl -I$(YSYXSOC_HOME)/perip/spi/rtl
 endif
+ifeq ($(shell grep -q "^#define CONFIG_DUMPWAVE" $(SIM_CONFIG) && echo yes || echo no),yes)
+VERILATOR_FLAGS += $(TRACE_FORMAT)
+OPEN_GTK = gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
+else
+OPEN_GTK =
+endif
 
 ### FLAGS for CSIM
 DISASM_CXXSRC = $(SRC_CODE_DIR)/sim/src/trace/disasm.cc
@@ -84,33 +90,24 @@ VERILATOR_CFLAGS = -DNPC_HOME=\\\"$(NPC_HOME)\\\" -DGEN_DIR=\\\"$(GEN_DIR)\\\" -
 ### args for SIM EXE order: sdb elf diff other
 IMG=../am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin
 #IMG=default
-SDB=sdb_n  # 跳过sdb则改为sdb_n, 否则是sdb_y
+SDB=sdb=no  # 跳过sdb则改为sdb=no, 否则是sdb=yes
 ARGS=$(SDB) elf=$(basename $(IMG)).elf diff=../nemu/build/riscv64-nemu-interpreter-so
 ifeq ($(PLATFORM), npcsoc)
-ARGS += $(TEST_DIR)/char-test.bin
+# ARGS += load=$(TEST_DIR)/char-test.bin
+ARGS += 
 endif
-
-### useful function
-define replace_if_matched
-$(eval MATCHED := $(shell grep -q '$2' '$1' && echo yes || echo no))
-ifeq ($(MATCHED),yes)
-$(info Match found, replacing in file '$1')
-$(shell sed -i 's/$2/$3/g' '$1')
-else
-$(info No match found in file '$1')
-endif
-endef
 
 echo_val:
-	@echo PLATFORM:$(PLATFORM)SCALASRCS
-	@echo SCALASRCS:$(SCALASRCS)
-	@echo SRC_CODE_DIR:$(SRC_CODE_DIR)
-	@echo GEN_DIR:$(GEN_DIR)
-	@echo OBJ_DIR:$(OBJ_DIR)
-	@echo VERILOG_OBJ_DIR:$(VERILOG_OBJ_DIR)
-	@echo PACKAGE:$(PACKAGE)
-	@echo YSYXSOC_HOME:$(YSYXSOC_HOME)
+	@#echo PLATFORM:$(PLATFORM)SCALASRCS
+	@#echo SCALASRCS:$(SCALASRCS)
+	@#echo SRC_CODE_DIR:$(SRC_CODE_DIR)
+	@#echo GEN_DIR:$(GEN_DIR)
+	@#echo OBJ_DIR:$(OBJ_DIR)
+	@#echo VERILOG_OBJ_DIR:$(VERILOG_OBJ_DIR)
+	@#echo PACKAGE:$(PACKAGE)
+	@#echo YSYXSOC_HOME:$(YSYXSOC_HOME)
 	@#echo VSRCS:$(VSRCS)
+	@echo ARGS:$(ARGS)
 
 ### >>>>>>>>>>>>>>>> soc tapeout project
 SOC_DIR = $(NPC_HOME)/build/soc
@@ -121,24 +118,6 @@ tapeout:
 	sed -i 's/\(val soc_sim: *Boolean = \)true/\1false/g' $(RVNoob_CONFIG)
 	./mill -i __.test.runMain $(PACKAGE).RVNoobCoreGen
 	make verilog_post_processing VPPFILE=$(SOC_DIR)/ysyx_22040495.v
-
-define replace_pattern
-    temp_file := $(shell mktemp)
-
-    search_pattern := $(2)
-    replace_text := $(3)
-
-    has_match := $(shell grep -q $(search_pattern) $(1) && echo yes || echo no)
-
-    ifeq ($(has_match),yes)
-        sed "/$(search_pattern)/c\\$(replace_text)" $(1) > $(temp_file)
-        mv $(temp_file) $(1)
-    endif
-
-    ifneq ($(wildcard $(temp_file)),)
-        rm $(temp_file)
-    endif
-endef
 
 ### >>>>>>>>>>>>>>>> general sim project
 update_config_spmu:
@@ -202,8 +181,8 @@ verilog_post_processing:
 
 ifeq ($(PLATFORM), npcsoc)
 GENTOPNAME:=ysyx_22040495
-endif
 WAVE_SAVE_FILE = wavefile/soc/init.gtkw
+endif
 
 verilog: $(VERILOG_OBJ_DIR)/$(GENTOPNAME).v
 
@@ -215,41 +194,13 @@ $(VERILOG_OBJ_DIR)/$(GENTOPNAME).v: $(SCALASRCS)
 
 sim_npc_vcd: update_config socgen verilog
 	mkdir -p $(OBJ_DIR)
-	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
-	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
-		$(VSRCS) \
-		$(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILATOR_CFLAGS))
-	$(SIM_BIN) $(IMG) $(ARGS)
-	gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
-
-sim_npc_vcd_without_gtk: update_config socgen verilog
-	mkdir -p $(OBJ_DIR)
-	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
+	g++ -O3 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
 	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) \
 		$(VSRCS) \
 		$(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
 		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILATOR_CFLAGS))
 	$(SIM_BIN) $(IMG) $(ARGS)
-
-sim_npc_vcd_without_regen: update_config socgen
-	mkdir -p $(OBJ_DIR)
-	g++ -O2 -MMD -Wall -Werror -save-temps $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
-	verilator -$(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) $(TRACE_FORMAT) \
-		$(VSRCS) \
-		$(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILATOR_CFLAGS))
-	$(SIM_BIN) $(IMG) $(ARGS)
-	gtkwave $(WAVE_FILE) $(WAVE_SAVE_FILE)
-
-sim_npc_vcd_without_regen_gtk: update_config socgen
-	mkdir -p $(OBJ_DIR)
-	g++ -O3 -MMD -Wall -Werror $(DISASM_CXXFLAGS) -c -o $(abspath $(OBJ_DIR)/disasm.o) $(DISASM_CXXSRC)
-	verilator $(VERILATOR_FLAGS) --top $(SIMTOPNAME) --Mdir $(OBJ_DIR) \
-		$(VSRCS) \
-		$(CSRCS_SIM) $(abspath $(OBJ_DIR)/disasm.o) \
-		-o $(abspath $(SIM_BIN)) $(addprefix -LDFLAGS ,$(VERILAOTR_LDFLAGS))  $(addprefix -CFLAGS ,$(VERILATOR_CFLAGS))
-	$(SIM_BIN) $(IMG) $(ARGS)
+	$(OPEN_GTK)
 
 gtk:
 	gtkwave $(WAVE_FILE)
