@@ -19,12 +19,14 @@
 
 #ifdef SOC_SIM
 
-#define MROM_PORT 0x20000000
 #define SRAM_PORT 0x0f000000
 #define UART_PORT 0x10000000L
+#define MROM_PORT 0x20000000
+#define FLASH_PORT 0x30000000
 
-#define MROM_SIZE 4 * 1024
 #define SRAM_SIZE 8 * 1024
+#define MROM_SIZE 4 * 1024
+#define FLASH_SIZE 4 * 1024
 
 #define DEVICE_BASE 0xa0000000
 #define MMIO_BASE DEVICE_BASE
@@ -62,9 +64,11 @@ void init_i8042();
 void i8042_data_io_handler();
 
 #ifdef SOC_SIM
+extern uint8_t flash[FLASH_SIZE];
+
 extern char *mrom_file;
 extern uint8_t mrom[MROM_SIZE];
-size_t init_mrom(const char* mrom_file);
+size_t init_mrom(const char *mrom_file);
 #endif
 
 #endif

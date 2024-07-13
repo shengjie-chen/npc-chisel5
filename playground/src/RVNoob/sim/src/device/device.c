@@ -139,7 +139,17 @@ void init_vga() {
 #ifdef SOC_SIM
 // --------------------------------> flash
 
-extern "C" void flash_read(uint32_t addr, uint32_t *data) { assert(0); }
+uint8_t flash[FLASH_SIZE] = {};
+
+extern "C" void flash_read(uint32_t addr, uint32_t *data) {
+    uint32_t offset = addr & ~0x3;
+    Assert(offset < sizeof(flash), "flash read out of bound, addr:%x", addr);
+    *data = *(uint32_t *)(flash + offset);
+#ifdef CONFIG_MTRACE
+    fprintf(mtrace_fp, "read  flash ## addr: %llx", addr & ~0x3ull);
+    fprintf(mtrace_fp, " -> 0x%016x \n", *data);
+#endif
+}
 
 // --------------------------------> mrom
 char *mrom_file = NULL;
@@ -173,7 +183,7 @@ size_t init_mrom(const char *mrom_file) {
 }
 
 extern "C" void mrom_read(uint32_t addr, uint32_t *data) {
-    uint32_t offset = (addr - 0x20000000) & ~0x3;
+    uint32_t offset = (addr - MROM_PORT) & ~0x3;
     // Assert(offset < sizeof(mrom), "mrom read out of bound, addr:%d", offset);
     *data = *(uint32_t *)(mrom + offset);
 #ifdef CONFIG_MTRACE

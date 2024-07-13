@@ -11,6 +11,7 @@ uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 
 bool in_pmem(paddr_t addr) { return (addr >= CONFIG_MBASE) && (addr - CONFIG_MSIZE < (paddr_t)CONFIG_MBASE); }
 #ifdef SOC_SIM
+static inline bool in_flash(paddr_t addr) { return (addr >= FLASH_PORT) && (addr - FLASH_SIZE < (paddr_t)FLASH_PORT); }
 static inline bool in_mrom(paddr_t addr) { return (addr >= MROM_PORT) && (addr - MROM_SIZE < (paddr_t)MROM_PORT); }
 static inline bool in_sram(paddr_t addr) { return (addr >= SRAM_PORT) && (addr - SRAM_SIZE < (paddr_t)SRAM_PORT); }
 #endif
@@ -22,6 +23,8 @@ uint8_t *guest_to_host(paddr_t paddr) {
 #ifdef SOC_SIM
     if (likely(in_mrom(paddr)))
         return mrom + paddr - MROM_PORT;
+	if (likely(in_flash(paddr)))
+		return flash + paddr - FLASH_PORT;
     else
         Assert(0, "paddr = %lx, out of bound!\n", paddr);
 #else

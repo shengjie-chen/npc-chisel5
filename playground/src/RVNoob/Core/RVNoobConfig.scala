@@ -57,7 +57,8 @@ trait RVNoobMemMap extends RVNoobModeConfig {
       Map(
         "clint" -> (0x02000000L.U, 0x0200ffffL.U),
         "sram"  -> (0x0f000000L.U, 0x0fffffffL.U),
-        "mrom"  -> (0x20000000L.U, 0x20000fffL.U)
+        "mrom"  -> (0x20000000L.U, 0x20000fffL.U),
+        "flash"  -> (0x30000000L.U, 0x3fffffffL.U)
       )
     else
       Map(

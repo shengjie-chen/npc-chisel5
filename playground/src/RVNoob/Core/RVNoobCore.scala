@@ -165,11 +165,11 @@ class RVNoobCore extends Module with ext_function with RVNoobConfig with RVNoobM
   pc_reset := ppl_ctrl.io.pc_reset
 
   if (tapeout) {
-    pc := Mux(pc_reset || reset.asBool, 0x30000000L.U(addr_w.W), Mux(pc_en, npc, pc))
+    pc := Mux(pc_reset || reset.asBool, mem_map("flash")._1, Mux(pc_en, npc, pc))
   } else if (soc_sim) {
-    pc := Mux(pc_reset || reset.asBool, 0x20000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
+    pc := Mux(pc_reset || reset.asBool, mem_map("flash")._1, Mux(pc_en, npc, pc)) //2147483648
   } else {
-    pc := Mux(pc_reset || reset.asBool, 0x80000000L.U(addr_w.W), Mux(pc_en, npc, pc)) //2147483648
+    pc := Mux(pc_reset || reset.asBool, mem_map("pmem")._1, Mux(pc_en, npc, pc)) //2147483648
   }
   npc      := Mux(pre_dnpc_en, pre_dnpc, npc_t)
   pre_dnpc := Mux(ret_en, ras.io.pop.bits, btb.io.bta)
